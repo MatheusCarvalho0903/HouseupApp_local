@@ -352,30 +352,30 @@ button[type="button"]:hover {
 /* Ajustes gerais para telas pequenas */
 @media (max-width: 768px) {
     body {
-        padding: 10px; /* Reduz padding do body */
+        padding: 10px;
     }
 
     .container {
-        padding: 15px; /* Reduz o padding lateral para ocupar mais espaço */
-        width: 95%; /* Ocupa mais espaço da tela */
+        padding: 15px;
+        width: 95%;
     }
 
     header {
-        padding: 15px; /* Reduz padding do header */
+        padding: 15px;
         margin-bottom: 20px;
     }
 
     header h1 {
-        font-size: 1.8em; /* Diminui o tamanho do título */
+        font-size: 1.8em;
     }
 
     header p {
-        font-size: 0.9em; /* Diminui o tamanho do texto da obra/código */
+        font-size: 0.9em;
         line-height: 1.4;
     }
 
     .current-global-progress {
-        font-size: 1.4em; /* Destaca mais o progresso no mobile */
+        font-size: 1.4em;
         display: block;
         margin-top: 10px;
         padding: 10px;
@@ -385,37 +385,37 @@ button[type="button"]:hover {
     }
 
     .client-link {
-        display: block; /* Ocupa largura total */
+        display: block;
         width: 100%;
         text-align: center;
-        font-size: 1em; /* Aumenta um pouco o tamanho */
-        padding: 12px 15px; /* Mais padding para touch */
+        font-size: 1em;
+        padding: 12px 15px;
         margin-top: 20px;
         box-sizing: border-box;
     }
 
     .section-card {
-        padding: 15px; /* Reduz o padding das seções */
-        margin-bottom: 15px; /* Ajusta a margem entre as seções */
+        padding: 15px;
+        margin-bottom: 15px;
     }
 
     .section-card h2 {
-        font-size: 1.4em; /* Títulos de seção menores */
+        font-size: 1.4em;
     }
 
     h3 {
-        font-size: 1.2em; /* Subtítulos menores */
+        font-size: 1.2em;
     }
 
-    /* Formulários de adição de atividade/sub-atividade */
+    /* Formulários de adição */
     .add-forms {
-        flex-direction: column; /* Coloca os formulários um abaixo do outro */
-        gap: 15px; /* Espaçamento entre eles */
+        flex-direction: column;
+        gap: 15px;
     }
 
     .add-form-group {
-        width: 100%; /* Ocupa a largura total */
-        min-width: auto; /* Remove min-width */
+        width: 100%;
+        min-width: auto;
     }
 
     /* Inputs e botões em geral */
@@ -423,166 +423,81 @@ button[type="button"]:hover {
     input[type="number"],
     input[type="date"],
     select {
-        width: 100%; /* Ocupa 100% da largura */
-        box-sizing: border-box; /* Garante que padding e borda não aumentem a largura */
-        margin-bottom: 10px; /* Adiciona um pouco de espaço entre os campos */
-        padding: 12px; /* Mais padding para touch */
-        font-size: 16px; /* Evita zoom no iOS */
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        padding: 12px;
+        font-size: 16px;
     }
 
     button {
-        width: 100%; /* Botões ocupam a largura total */
-        margin-bottom: 10px; /* Espaçamento entre botões, se houver */
-        padding: 14px 15px; /* Aumenta o padding para serem mais fáceis de tocar */
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 14px 15px;
         font-size: 1em;
-        min-height: 44px; /* Altura mínima para touch */
+        min-height: 44px;
     }
 
-    /* Correção específica para os botões Salvar e Limpar */
+    /* Correção para botões Salvar e Limpar */
     #cronograma-form button[type="submit"],
     #cronograma-form button.clear-button {
-        margin-right: 0 !important; /* Remove margem direita para não quebrar o 100% */
-        margin-bottom: 10px; /* Espaço entre eles */
+        margin-right: 0 !important;
+        margin-bottom: 10px;
     }
 
-    /* --- NOVA ABORDAGEM PARA MOBILE: CARDS EM VEZ DE TABELA --- */
+    /* --- TABELA RESPONSIVA SIMPLES --- */
     
-    /* Esconde a tabela no mobile */
+    /* Força scroll horizontal na tabela se necessário */
     .data-table {
-        display: none;
+        font-size: 0.8em;
+        min-width: 600px; /* Força uma largura mínima */
     }
 
-    /* Container para os cards mobile */
-    #cronograma-body {
-        display: block !important;
+    /* Container com scroll horizontal */
+    .section-card {
+        overflow-x: auto; /* Permite scroll horizontal */
     }
 
-    /* Cada linha da tabela vira um card */
-    .data-table tr {
-        display: block;
-        background-color: var(--houseup-white);
-        border: 1px solid var(--houseup-border-color);
-        border-radius: 8px;
-        margin-bottom: 15px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        position: relative;
-    }
-
-    /* Sub-atividades com destaque visual */
-    .sub-activity-row {
-        background-color: var(--houseup-off-white);
-        border-left: 4px solid var(--houseup-light-blue);
-        margin-left: 10px;
-        margin-top: 10px;
-    }
-
-    /* Cada célula vira uma linha do card */
-    .data-table td {
-        display: block;
-        padding: 8px 0;
-        border: none;
-        text-align: left;
-        position: relative;
-        min-height: auto;
-    }
-
-    /* Labels para cada campo */
-    .data-table td:nth-child(1)::before { content: "Atividade: "; }
-    .data-table td:nth-child(2)::before { content: "Tipo: "; }
-    .data-table td:nth-child(3)::before { content: "Peso: "; }
-    .data-table td:nth-child(4)::before { content: "Progresso: "; }
-    .data-table td:nth-child(5)::before { content: "Status: "; }
-    .data-table td:nth-child(6)::before { content: "Prazo: "; }
-    .data-table td:nth-child(7)::before { content: "Ações: "; }
-
-    .data-table td::before {
-        font-weight: bold;
-        color: var(--houseup-dark-blue);
-        display: inline-block;
-        width: 80px;
-        margin-right: 10px;
-    }
-
-    /* Ajustes para inputs e selects dentro dos cards */
-    .data-table td input[type="text"] {
-        width: calc(100% - 90px);
-        display: inline-block;
-        padding: 8px;
-        border: 1px solid var(--houseup-border-color);
-        border-radius: 4px;
-        font-size: 16px;
-        vertical-align: top;
-    }
-
-    .data-table td input[type="number"] {
-        width: 80px;
-        padding: 8px;
-        border: 1px solid var(--houseup-border-color);
-        border-radius: 4px;
-        font-size: 16px;
-        text-align: center;
-    }
-
-    .data-table td select {
-        width: calc(100% - 90px);
-        padding: 8px;
-        border: 1px solid var(--houseup-border-color);
-        border-radius: 4px;
-        font-size: 16px;
-        background-color: var(--houseup-white);
-    }
-
-    /* Progresso especial */
-    .data-table td .progress-cell-content {
-        display: block;
-        margin-top: 5px;
-    }
-
-    .data-table td .progress-cell-content input {
-        width: 80px;
-        margin-bottom: 8px;
-    }
-
-    .data-table td .progress-bar-container {
+    /* Ajusta inputs da tabela */
+    .data-table input[type="text"],
+    .data-table input[type="number"] {
         width: 100%;
-        height: 12px;
-        background-color: #e0e0e0;
-        border-radius: 6px;
-        overflow: hidden;
-    }
-
-    .data-table td .progress-bar-fill {
-        height: 100%;
-        background-color: var(--houseup-accent-green);
-        transition: width 0.3s ease-in-out;
-    }
-
-    /* Botões de ação */
-    .data-table td .action-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 5px;
-        flex-wrap: wrap;
-    }
-
-    .data-table td .action-buttons button {
-        width: auto;
-        padding: 8px 12px;
-        font-size: 0.9em;
-        min-height: 36px;
+        min-width: 80px;
+        padding: 6px;
+        font-size: 14px;
         margin-bottom: 0;
-        flex: 1;
-        min-width: 60px;
     }
 
-    /* Toggle icon para sub-atividades */
-    .data-table td .toggle-icon {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        font-size: 1.2em;
-        color: var(--houseup-medium-blue);
+    .data-table select {
+        width: 100%;
+        min-width: 100px;
+        padding: 6px;
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+
+    /* Botões de ação menores */
+    .action-buttons button {
+        padding: 4px 6px;
+        font-size: 0.8em;
+        margin-bottom: 0;
+        width: auto;
+        min-height: 32px;
+    }
+
+    /* Ajusta células */
+    .data-table th,
+    .data-table td {
+        padding: 6px 4px;
+        font-size: 0.8em;
+        white-space: nowrap;
+    }
+
+    /* Coluna de atividade pode quebrar linha */
+    .data-table td:first-child {
+        white-space: normal;
+        min-width: 120px;
+        max-width: 150px;
     }
 }
 
@@ -601,16 +516,12 @@ button[type="button"]:hover {
         font-size: 1.2em;
     }
 
-    .data-table td::before {
-        width: 70px;
-        font-size: 0.9em;
+    .data-table {
+        font-size: 0.75em;
     }
 
-    .data-table td input[type="text"] {
-        width: calc(100% - 80px);
-    }
-
-    .data-table td select {
-        width: calc(100% - 80px);
+    .action-buttons button {
+        padding: 3px 5px;
+        font-size: 0.75em;
     }
 }
