@@ -346,3 +346,220 @@ button[type="button"]:hover {
     display: inline-block;
     vertical-align: middle;
 }
+/* --- ESTILOS RESPONSIVOS PARA MOBILE --- */
+
+/* Ajustes gerais para telas pequenas */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px; /* Reduz o padding lateral para ocupar mais espaço */
+    }
+
+    header h1 {
+        font-size: 1.8em; /* Diminui o tamanho do título */
+    }
+
+    header p {
+        font-size: 0.9em; /* Diminui o tamanho do texto da obra/código */
+        line-height: 1.4;
+    }
+
+    .client-link {
+        font-size: 0.8em; /* Link menor */
+        padding: 8px 12px;
+    }
+
+    .section-card {
+        padding: 15px; /* Reduz o padding das seções */
+        margin-bottom: 15px; /* Ajusta a margem entre as seções */
+    }
+
+    h2 {
+        font-size: 1.5em; /* Títulos de seção menores */
+    }
+
+    h3 {
+        font-size: 1.3em; /* Subtítulos menores */
+    }
+
+    /* Formulários de adição de atividade/sub-atividade */
+    .add-forms {
+        flex-direction: column; /* Coloca os formulários um abaixo do outro */
+        gap: 20px; /* Espaçamento entre eles */
+    }
+
+    .add-form-group {
+        width: 100%; /* Ocupa a largura total */
+    }
+
+    /* Inputs e botões em geral */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+        width: calc(100% - 20px); /* Ocupa quase 100% da largura, descontando padding */
+        box-sizing: border-box; /* Garante que padding e borda não aumentem a largura */
+        margin-bottom: 10px; /* Adiciona um pouco de espaço entre os campos */
+    }
+
+    button {
+        width: 100%; /* Botões ocupam a largura total */
+        margin-bottom: 10px; /* Espaçamento entre botões, se houver */
+        padding: 12px 15px; /* Aumenta o padding para serem mais fáceis de tocar */
+        font-size: 1em;
+    }
+
+    /* Correção específica para os botões Salvar e Limpar */
+    #cronograma-form button[type="submit"],
+    #cronograma-form button.clear-button {
+        margin-right: 0 !important; /* Remove margem direita para não quebrar o 100% */
+        margin-bottom: 10px; /* Espaço entre eles */
+    }
+
+
+    /* --- TRATAMENTO ESPECIAL PARA A TABELA (CRONOGRAMA) --- */
+    /* Tabelas são difíceis em mobile, esta é uma abordagem comum */
+    .data-table {
+        border: 0; /* Remove bordas da tabela principal */
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none; /* Esconde o cabeçalho da tabela em telas pequenas */
+    }
+
+    .data-table tr {
+        display: block; /* Cada linha da tabela vira um bloco */
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fff;
+        padding: 10px;
+    }
+
+    .data-table td {
+        display: block; /* Cada célula vira um bloco */
+        text-align: right; /* Alinha o conteúdo à direita */
+        padding: 8px 10px;
+        border-bottom: 1px dotted #eee; /* Linha pontilhada entre as "células" */
+        position: relative;
+        padding-left: 50%; /* Dá espaço para o "label" */
+    }
+
+    .data-table td:last-child {
+        border-bottom: 0; /* Remove a borda da última célula */
+    }
+
+    /* Adiciona labels para as "células" simulando o cabeçalho */
+    .data-table td::before {
+        content: attr(data-label); /* Usa o atributo data-label como conteúdo */
+        position: absolute;
+        left: 10px;
+        width: calc(50% - 20px); /* Ajusta a largura do label */
+        padding-right: 10px;
+        white-space: nowrap; /* Impede quebra de linha */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Adiciona reticências se o texto for muito longo */
+        font-weight: bold;
+        text-align: left;
+        color: #333;
+    }
+
+    /* Estilos para as sub-atividades na tabela responsiva */
+    .sub-activity-row .action-buttons {
+        /* Garante que os botões de ação fiquem em linha para sub-atividades */
+        display: flex;
+        flex-wrap: wrap; /* Permite quebrar linha se não couberem */
+        justify-content: flex-end; /* Alinha à direita */
+        gap: 5px; /* Espaçamento entre os botões */
+    }
+
+    .sub-activity-row .action-buttons button {
+        width: auto; /* Deixa os botões voltarem ao tamanho normal */
+        flex-grow: 1; /* Permite que eles cresçam para preencher o espaço */
+        max-width: 80px; /* Limita o tamanho máximo dos botões */
+        font-size: 0.9em;
+        padding: 6px 8px;
+    }
+
+    /* Esconde o toggle icon em mobile para a sub-atividade, 
+       pois a sub-atividade já está "em bloco" */
+    .sub-indent-char {
+        display: inline-block; /* O hífen ainda aparece */
+        margin-right: 5px;
+    }
+    
+    /* Ajusta a exibição dos botões de ação para ficarem mais compactos e horizontais */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap; /* Permite quebrar a linha se não houver espaço suficiente */
+        gap: 5px; /* Espaço entre os botões */
+        justify-content: flex-end; /* Alinha os botões à direita da célula */
+        padding-top: 5px; /* Pequeno espaçamento do conteúdo acima */
+    }
+
+    .action-buttons button {
+        width: auto; /* Permite que o botão se ajuste ao conteúdo */
+        padding: 6px 10px;
+        font-size: 0.85em;
+        margin-bottom: 0; /* Remove a margem extra adicionada antes */
+    }
+
+    /* Ajuste para o input de descrição, para ocupar o espaço sem o label em mobile */
+    .data-table td input[type="text"] {
+        width: 100%; /* Ocupa toda a largura disponível da célula */
+        text-align: right; /* Mantém o texto alinhado à direita */
+    }
+    .data-table td .toggle-icon {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        font-size: 1.2em;
+        color: #666;
+    }
+
+    .data-table td .progress-cell-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; /* Alinha os itens à direita */
+    }
+
+    .data-table td .progress-cell-content input {
+        width: 100px; /* Largura fixa para o input de progresso em mobile */
+        margin-bottom: 5px;
+    }
+
+    .data-table td .progress-bar-container {
+        width: 100%; /* Ocupa a largura total da célula */
+    }
+}
+
+
+/* --- Estilos para telas ainda menores (ex: celulares antigos, modo paisagem) --- */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.6em;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    h3 {
+        font-size: 1.1em;
+    }
+
+    /* Ajustes finos para os botões de ação em telas muito pequenas */
+    .action-buttons button {
+        padding: 5px 8px;
+        font-size: 0.8em;
+    }
+
+    .data-table td::before {
+        width: calc(40% - 10px); /* Ajusta a largura do label para dar mais espaço ao valor */
+        font-size: 0.9em;
+    }
+
+    .data-table td {
+        padding-left: 45%; /* Reduz um pouco o padding-left */
+    }
+}
