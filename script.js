@@ -1,7 +1,4 @@
 // --- FIREBASE CONFIGURAÇÃO E INICIALIZAÇÃO ---
-// ESTES VALORES FORAM FORNECIDOS POR VOCÊ, MATHEUS.
-// Se você criar um novo projeto Firebase ou novas credenciais para o app web,
-// precisará atualizar esta seção com os novos valores.
 const firebaseConfig = {
   apiKey: "AIzaSyDq3mr-ryX_q8GAEyfTsQP2mzjpP9wOugE",
   authDomain: "houseup-app.firebaseapp.com",
@@ -9,23 +6,14 @@ const firebaseConfig = {
   storageBucket: "houseup-app.firebasestorage.app",
   messagingSenderId: "401114152723",
   appId: "1:401114152723:web:f96eaf0a718342c0cf64e6",
-  measurementId: "G-S07Q5EFB0T" // O measurementId é para Google Analytics, não essencial para o Firestore. Pode ser mantido ou removido.
+  measurementId: "G-S07Q5EFB0T"
 };
 
-// Inicializa o Firebase
 firebase.initializeApp(firebaseConfig);
-
-// Obtém uma referência para o Firestore
 const db = firebase.firestore();
-
-// Referência ao documento onde vamos armazenar os dados da obra
-// Usaremos um único documento chamado 'houseupData' dentro de uma coleção 'dados'
 const dadosObraRef = db.collection('dados').doc('houseupData');
-// --- FIM DA CONFIGURAÇÃO FIREBASE ---
 
-
-// Dados iniciais (usados se não houver nada no Firestore)
-// Este é o cronograma padrão que será carregado na primeira vez ou após "Limpar Cronograma".
+// Dados iniciais
 const initialDadosObra = {
     "nome_obra": "Casa do Matheus - Projeto Veraneio",
     "codigo_obra": "HOUS-001-2024",
@@ -34,8 +22,6 @@ const initialDadosObra = {
         "mao_de_obra": 0.00
     },
     "cronograma": [
-        // Exemplo inicial de cronograma. Você pode limpá-lo ao carregar a página
-        // para construir o seu cronograma padrão do zero usando a validação de 100%.
         {
             "id": "ATV001", "descricao": "Fundação", "peso_global": 25,
             "sub_atividades": [
@@ -71,18 +57,9 @@ const initialDadosObra = {
     ]
 };
 
-// --- VARIÁVEL GLOBAL PARA OS DADOS DA OBRA ---
-// Essa variável será preenchida com os dados do Firestore ou os dados iniciais.
 let dadosObra;
 
-
 // Funções utilitárias
-
-/**
- * Retorna o status da atividade com base no seu progresso.
- * @param {number} progressValue - O valor do progresso (0 a 100).
- * @returns {string} O status correspondente.
- */
 function getAutomatedStatus(progressValue) {
     if (progressValue === 0) {
         return "Não Iniciada";
@@ -93,13 +70,6 @@ function getAutomatedStatus(progressValue) {
     }
 }
 
-/**
- * Calcula o progresso efetivo de uma atividade.
- * Se a atividade tiver sub-atividades, calcula a média ponderada do progresso delas.
- * Caso contrário, retorna o progresso próprio da atividade.
- * @param {object} atividade - O objeto da atividade (principal ou sub-atividade).
- * @returns {number} O progresso efetivo da atividade.
- */
 function getEffectiveActivityProgress(atividade) {
     if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
         let subProgressPonderado = 0;
@@ -109,18 +79,12 @@ function getEffectiveActivityProgress(atividade) {
             subPesoTotal += sub.peso_local;
         });
         const calculatedProgress = subPesoTotal === 0 ? 0 : (subProgressPonderado / subPesoTotal) * 100;
-        // Arredonda para evitar problemas de ponto flutuante
         return parseFloat(calculatedProgress.toFixed(2));
     } else {
-        return atividade.progresso_atividade; // É uma atividade folha
+        return atividade.progresso_atividade;
     }
 }
 
-/**
- * Calcula o progresso global da obra com base no cronograma e pesos globais das atividades principais.
- * @param {Array<object>} cronograma - O array de atividades principais do cronograma.
- * @returns {number} O progresso global da obra em porcentagem.
- */
 function calcularProgressoGlobal(cronograma) {
     let globalProgressPonderado = 0;
     let globalPesoTotal = 0;
@@ -135,45 +99,60 @@ function calcularProgressoGlobal(cronograma) {
     return parseFloat(calculatedProgress.toFixed(2));
 }
 
-/**
- * Formata um valor numérico para o formato de moeda brasileira (R$).
- * @param {number} valor - O valor a ser formatado.
- * @returns {string} O valor formatado como moeda.
- */
+function validarPesoLocalSubAtividades(atividadePrincipalId, novoPesoLocal, subAtividadeId = null) {
+    const atividadePrincipal = dadosObra.cronograma.find(a => a.id === atividadePrincipalId);
+    if (!atividadePrincipal || !atividadePrincipal.sub_atividades) return true;
+
+    let somaAtual = 0;
+    atividadePrincipal.sub_atividades.forEach(sub => {
+        if (subAtividadeId && sub.id === subAtividadeId) return;
+        somaAtual += sub.peso_local || 0;
+    });
+
+    const somaTotal = somaAtual + novoPesoLocal;
+    
+    if (somaTotal > 100) {
+        alert(`❌ Erro: A soma dos pesos locais das sub-atividades (${somaTotal}%) não pode exceder 100%.\n\nPeso atual das outras sub-atividades: ${somaAtual}%\nPeso que você está tentando adicionar: ${novoPesoLocal}%\n\nPor favor, ajuste os valores.`);
+        return false;
+    }
+    
+    return true;
+}
+
+function atualizarDisplayPesoLocal(atividadePrincipalId) {
+    const atividadePrincipal = dadosObra.cronograma.find(a => a.id === atividadePrincipalId);
+    if (!atividadePrincipal || !atividadePrincipal.sub_atividades) return;
+
+    let somaTotal = 0;
+    atividadePrincipal.sub_atividades.forEach(sub => {
+        somaTotal += sub.peso_local || 0;
+    });
+
+    console.log(`Atividade ${atividadePrincipal.descricao}: Soma dos pesos locais = ${somaTotal}%`);
+    return somaTotal;
+}
+
 function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-
-// --- FUNÇÃO SALVAR DADOS DA OBRA (MODIFICADA PARA FIREBASE) ---
-/**
- * Salva o objeto 'dadosObra' atual no Firestore e recarrega a interface administrativa.
- */
 async function salvarDadosObra() {
-    updateAllActivityStatuses(); // Atualiza todos os status antes de salvar
+    updateAllActivityStatuses();
 
     try {
-        // Usa set para sobrescrever o documento com os novos dados
-        // await indica que o JavaScript "espera" a operação do Firestore terminar
         await dadosObraRef.set(dadosObra);
-        alert('Dados salvos com sucesso no Firestore!');
-        carregarAdminView(); // Recarrega a view para mostrar os dados atualizados e recalcular progresso
+        alert('✅ Dados salvos com sucesso no Firestore!');
+        carregarAdminView();
     } catch (error) {
         console.error("Erro ao salvar dados no Firestore: ", error);
-        alert('Erro ao salvar dados. Verifique o console do navegador (F12) para mais detalhes.');
+        alert('❌ Erro ao salvar dados. Verifique o console do navegador (F12) para mais detalhes.');
     }
 }
-// --- FIM DA MODIFICAÇÃO SALVAR DADOS ---
 
-
-/**
- * Atualiza o status de todas as atividades e sub-atividades no objeto dadosObra
- * com base na lógica de progresso automatizado.
- */
 function updateAllActivityStatuses() {
     dadosObra.cronograma.forEach(atividadePrincipal => {
         const principalEffectiveProgress = getEffectiveActivityProgress(atividadePrincipal);
-        atividadePrincipal.progresso_atividade = principalEffectiveProgress; // Garante que o progresso da principal está atualizado
+        atividadePrincipal.progresso_atividade = principalEffectiveProgress;
         atividadePrincipal.status = getAutomatedStatus(principalEffectiveProgress);
 
         if (atividadePrincipal.sub_atividades) {
@@ -184,29 +163,14 @@ function updateAllActivityStatuses() {
     });
 }
 
-/**
- * Gera um ID único para novas atividades ou sub-atividades.
- * @param {string} prefixo - O prefixo para o ID (ex: "ATV", "SUB").
- * @returns {string} Um ID único.
- */
 function gerarNovoId(prefixo) {
-    // Usa Math.random e Date.now para criar uma string razoavelmente única
     return prefixo + Math.random().toString(36).substring(2, 9) + Date.now().toString().substring(9,13);
 }
 
-/**
- * Soma os pesos globais de todas as atividades principais existentes.
- * @returns {number} A soma total dos pesos globais.
- */
 function sumCurrentGlobalWeights() {
     return dadosObra.cronograma.reduce((sum, activity) => sum + (activity.peso_global || 0), 0);
 }
 
-/**
- * Atualiza o contador de peso global na interface.
- * @param {number} total - O total de peso global a ser exibido.
- * @param {string} elementId - O ID do elemento HTML onde o total será exibido.
- */
 function updatePesoGlobalDisplay(total, elementId = 'total-peso-global-display') {
     const displayElement = document.getElementById(elementId);
     if (displayElement) {
@@ -215,15 +179,12 @@ function updatePesoGlobalDisplay(total, elementId = 'total-peso-global-display')
             displayElement.style.color = 'red';
             displayElement.style.fontWeight = 'bold';
         } else {
-            displayElement.style.color = ''; // Reseta para a cor padrão
+            displayElement.style.color = '';
             displayElement.style.fontWeight = 'normal';
         }
     }
 }
 
-/**
- * Lida com a atualização em tempo real do contador quando o usuário digita um novo peso global.
- */
 function handleNewPesoGlobalInput() {
     const newWeightInput = document.getElementById('nova-atividade-peso-global');
     const newWeight = parseFloat(newWeightInput.value) || 0;
@@ -232,10 +193,6 @@ function handleNewPesoGlobalInput() {
     updatePesoGlobalDisplay(potentialTotal);
 }
 
-/**
- * Atualiza visualmente a barra de progresso para um input de porcentagem.
- * @param {HTMLElement} inputElement - O elemento input de progresso.
- */
 function updateProgressBarVisual(inputElement) {
     const progressValue = parseFloat(inputElement.value) || 0;
     const progressBarFill = inputElement.nextElementSibling.querySelector('.progress-bar-fill');
@@ -244,25 +201,40 @@ function updateProgressBarVisual(inputElement) {
         progressBarFill.style.width = `${progressValue}%`;
     }
 
-    // Também atualiza o status automaticamente
+    if (inputElement.dataset.type === 'peso-local') {
+        const atividadePrincipalId = inputElement.dataset.id;
+        const subAtividadeId = inputElement.dataset.subId;
+        
+        if (!validarPesoLocalSubAtividades(atividadePrincipalId, progressValue, subAtividadeId)) {
+            const atividadePrincipal = dadosObra.cronograma.find(a => a.id === atividadePrincipalId);
+            const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === subAtividadeId);
+            if (subAtividade) {
+                inputElement.value = subAtividade.peso_local || 0;
+            }
+            return;
+        }
+    }
+
     const activityId = inputElement.dataset.id;
-    const subActivityId = inputElement.dataset.subId; // Pode ser undefined
+    const subActivityId = inputElement.dataset.subId;
     let currentActivity;
 
     if (subActivityId) {
-        // É uma sub-atividade
         const principal = dadosObra.cronograma.find(a => a.id === activityId);
         currentActivity = principal?.sub_atividades?.find(s => s.id === subActivityId);
     } else {
-        // É uma atividade principal sem sub-atividades
         currentActivity = dadosObra.cronograma.find(a => a.id === activityId);
     }
 
     if (currentActivity) {
-        currentActivity.progresso_atividade = progressValue; // Atualiza o progresso no objeto de dados
-        currentActivity.status = getAutomatedStatus(progressValue); // Define o status
+        if (inputElement.dataset.type === 'progresso-principal' || inputElement.dataset.type === 'progresso-sub') {
+            currentActivity.progresso_atividade = progressValue;
+        } else if (inputElement.dataset.type === 'peso-local') {
+            currentActivity.peso_local = progressValue;
+        }
         
-        // Agora, encontre o select de status correspondente e atualize-o
+        currentActivity.status = getAutomatedStatus(currentActivity.progresso_atividade || 0);
+        
         const statusSelect = subActivityId
             ? document.querySelector(`select[data-id="${activityId}"][data-sub-id="${subActivityId}"][data-type="status-sub"]`)
             : document.querySelector(`select[data-id="${activityId}"][data-type="status-principal"]`);
@@ -270,13 +242,9 @@ function updateProgressBarVisual(inputElement) {
         if (statusSelect) {
             statusSelect.value = currentActivity.status;
         }
-        // Se a atividade for principal e tiver sub-atividades, seu progresso/status precisa ser recalculado
+        
         if (!subActivityId && currentActivity.sub_atividades && currentActivity.sub_atividades.length > 0) {
-             // Removida a chamada a salvarDadosObra() aqui para evitar muitas escritas no Firestore
-             // e para que o recálculo do progresso da principal seja feito no 'Salvar Cronograma' ou 'blur'
         } else if (subActivityId) {
-            // Se uma sub-atividade mudou, a atividade principal a ela associada pode ter seu progresso afetado
-            // Encontrar a atividade principal e atualizar seu status e barra
             const principalActivity = dadosObra.cronograma.find(a => a.id === activityId);
             if (principalActivity) {
                 const effectivePrincipalProgress = getEffectiveActivityProgress(principalActivity);
@@ -288,61 +256,50 @@ function updateProgressBarVisual(inputElement) {
 
                 if (principalProgressInput) {
                     principalProgressInput.value = effectivePrincipalProgress.toFixed(0);
-                    updateProgressBarVisual(principalProgressInput); // Atualiza visualmente a barra da principal
+                    updateProgressBarVisual(principalProgressInput);
                 }
                 if (principalStatusSelect) {
                     principalStatusSelect.value = principalActivity.status;
                 }
+                
+                const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
+                document.getElementById('admin-progresso-global').textContent = `${progressoGlobal.toFixed(0)}%`;
             }
         }
     }
 }
 
-
-/**
- * Carrega e renderiza todas as informações na interface administrativa.
- * Isso inclui detalhes da obra, cronograma com atividades/sub-atividades e custos.
- */
 function carregarAdminView() {
-    // Primeiramente, atualiza todos os status no objeto de dados para refletir o progresso atual
     updateAllActivityStatuses();
 
-    // Info da Obra
     document.getElementById('admin-nome-obra').textContent = dadosObra.nome_obra;
     document.getElementById('admin-codigo-obra').textContent = dadosObra.codigo_obra;
     document.getElementById('admin-progresso-global').textContent = `${calcularProgressoGlobal(dadosObra.cronograma).toFixed(0)}%`;
 
-    // Cronograma
     const cronogramaBody = document.getElementById('cronograma-body');
-    cronogramaBody.innerHTML = ''; // Limpa a tabela antes de preencher
+    cronogramaBody.innerHTML = '';
     const parentActivitySelect = document.getElementById('parent-activity-select');
-    parentActivitySelect.innerHTML = '<option value="">Selecione a Atividade Principal</option>'; // Limpa e adiciona opção padrão para o select de pai
+    parentActivitySelect.innerHTML = '<option value="">Selecione a Atividade Principal</option>';
 
     dadosObra.cronograma.forEach((atividadePrincipal, indexPrincipal) => {
-        // Adiciona atividade principal ao select de pai para sub-atividades
         const option = document.createElement('option');
         option.value = atividadePrincipal.id;
         option.textContent = atividadePrincipal.descricao;
         parentActivitySelect.appendChild(option);
 
-        // Constrói o conteúdo da primeira célula (Descrição + Toggle + Input de Edição)
         let firstCellContent = '';
         if (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) {
             firstCellContent += `<span class="toggle-icon" onclick="toggleSubActivities('${atividadePrincipal.id}')">▶</span>`;
         }
         firstCellContent += `<input type="text" value="${atividadePrincipal.descricao}" data-id="${atividadePrincipal.id}" data-type="descricao-principal" class="activity-description-input">`;
 
-        // Prepara os atributos para o input de progresso da atividade principal
-        // O progresso de uma principal com sub-atividades é sempre DESABILITADO (derivado)
         const isPrincipalProgressDisabled = (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) ? 'disabled' : '';
         const principalProgressClass = (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) ? 'disabled-input' : '';
         const principalEffectiveProgress = getEffectiveActivityProgress(atividadePrincipal).toFixed(0);
 
-        // O select de status SEMPRE será desabilitado pois agora é automatizado
         const isStatusDisabled = 'disabled';
         const statusClass = 'disabled-input';
 
-        // Cria a linha para a atividade principal na tabela
         const row = cronogramaBody.insertRow();
         row.innerHTML = `
             <td data-label="Atividade / Sub-Atividade">${firstCellContent}</td>
@@ -374,7 +331,6 @@ function carregarAdminView() {
             </td>
         `;
 
-        // Renderiza sub-atividades, se existirem
         if (atividadePrincipal.sub_atividades) {
             atividadePrincipal.sub_atividades.forEach((sub, indexSub) => {
                 const subRow = cronogramaBody.insertRow();
@@ -382,7 +338,7 @@ function carregarAdminView() {
                 subRow.innerHTML = `
                     <td data-label="Atividade / Sub-Atividade"><span class="sub-indent-char">- </span><input type="text" value="${sub.descricao}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="descricao-sub" class="activity-description-input"></td>
                     <td data-label="Tipo">Sub</td>
-                    <td data-label="Peso (%)"><input type="number" min="0" max="100" value="${sub.peso_local}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="peso-local"></td>
+                    <td data-label="Peso (%)"><input type="number" min="0" max="100" value="${sub.peso_local}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="peso-local" class="activity-progress-input"></td>
                     <td data-label="Progresso (%)">
                         <div class="progress-cell-content">
                             <input type="number" min="0" max="100" value="${sub.progresso_atividade}" class="activity-progress-input" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="progresso-sub">
@@ -412,104 +368,96 @@ function carregarAdminView() {
         }
     });
 
-    // Custos
     document.getElementById('total-material-admin').textContent = formatarMoeda(dadosObra.gastos.material);
     document.getElementById('total-mao-de-obra-admin').textContent = formatarMoeda(dadosObra.gastos.mao_de_obra);
-    document.getElementById('novo-material').value = 0; // Limpa o campo
-    document.getElementById('nova-mao-de-obra').value = 0; // Limpa o campo
+    document.getElementById('novo-material').value = 0;
+    document.getElementById('nova-mao-de-obra').value = 0;
 
-    // Atualiza o contador de peso global no carregamento da view
     updatePesoGlobalDisplay(sumCurrentGlobalWeights());
 
-    // Adiciona listener para atualização em tempo real do input de "novo peso global"
     const novaAtividadePesoGlobalInput = document.getElementById('nova-atividade-peso-global');
     if (novaAtividadePesoGlobalInput) {
-        novaAtividadePesoGlobalInput.removeEventListener('input', handleNewPesoGlobalInput); // Remove para evitar duplicidade
+        novaAtividadePesoGlobalInput.removeEventListener('input', handleNewPesoGlobalInput);
         novaAtividadePesoGlobalInput.addEventListener('input', handleNewPesoGlobalInput);
     }
 
-    // Adiciona event listeners para os inputs de progresso para atualizar a barra visualmente E O STATUS
     document.querySelectorAll('.activity-progress-input').forEach(input => {
-        // Remove listeners antigos para evitar duplicidade ao recarregar a view
         input.removeEventListener('input', () => updateProgressBarVisual(input));
-        // Adiciona o novo listener
         input.addEventListener('input', () => updateProgressBarVisual(input));
-        // Garante que a barra visual e o status estejam corretos no carregamento inicial
         updateProgressBarVisual(input);
     });
 }
 
-
-// Event Listeners (acionam funções quando a página é carregada ou um formulário é enviado)
-
-// --- LIDA COM O CARREGAMENTO INICIAL DO DOM (MODIFICADO PARA FIREBASE) ---
-// Garante que a view é carregada assim que o DOM está pronto, após carregar os dados do Firebase.
-document.addEventListener('DOMContentLoaded', async () => { // Adicione 'async' aqui!
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const doc = await dadosObraRef.get(); // Tenta buscar o documento 'houseupData' no Firestore
+        const doc = await dadosObraRef.get();
         if (doc.exists) {
-            dadosObra = doc.data(); // Se o documento existe, usa os dados do Firestore
+            dadosObra = doc.data();
             console.log("Dados carregados do Firestore:", dadosObra);
         } else {
-            // Se o documento não existe (primeira vez), usa os dados iniciais do script
             dadosObra = initialDadosObra;
-            // E já tenta salvar esses dados iniciais no Firestore para que eles existam a partir de agora
             await dadosObraRef.set(initialDadosObra);
             console.log("Documento 'houseupData' criado no Firestore com dados iniciais.");
         }
     } catch (error) {
         console.error("Erro ao carregar dados do Firestore: ", error);
         alert('Erro ao carregar dados do banco. Usando dados iniciais. Verifique o console do navegador (F12) para detalhes.');
-        dadosObra = initialDadosObra; // Fallback para dados iniciais em caso de erro
+        dadosObra = initialDadosObra;
     }
 
-    carregarAdminView(); // Carrega a view APENAS DEPOIS que os dados estiverem prontos
+    carregarAdminView();
 });
-// --- FIM DA MODIFICAÇÃO CARREGAMENTO DO DOM ---
 
-
-// Lida com o envio do formulário de cronograma (botão "Salvar Cronograma")
 document.getElementById('cronograma-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Impede o recarregamento da página
+    event.preventDefault();
 
-    // Cria uma cópia profunda para validar o estado POTENCIAL após as edições do formulário
     let tempCronograma = JSON.parse(JSON.stringify(dadosObra.cronograma));
 
-    // Atualiza apenas os pesos globais na estrutura temporária para validação
     document.querySelectorAll('[data-type="peso-global"]').forEach(input => {
         const atividade = tempCronograma.find(a => a.id === input.dataset.id);
         if (atividade) atividade.peso_global = parseFloat(input.value);
     });
 
-    // Valida o total peso_global ANTES de aplicar as mudanças ao dadosObra real
     const newTotalPesoGlobal = tempCronograma.reduce((sum, activity) => sum + (activity.peso_global || 0), 0);
     if (newTotalPesoGlobal > 100) {
-        alert(`Erro: O peso global total das atividades principais não pode exceder 100%. Com esta atividade, o total seria ${newTotalPesoGlobal}%. Por favor, ajuste os pesos na tabela.`);
-        return; // Impede o salvamento se a validação falhar
+        alert(`❌ Erro: O peso global total das atividades principais não pode exceder 100%. Com esta atividade, o total seria ${newTotalPesoGlobal}%. Por favor, ajuste os pesos na tabela.`);
+        return;
     }
 
-    // Se a validação passou, procede para aplicar todas as mudanças ao objeto dadosObra real
+    let validacaoSubAtividades = true;
+    tempCronograma.forEach(atividade => {
+        if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
+            let somaPesoLocal = 0;
+            atividade.sub_atividades.forEach(sub => {
+                somaPesoLocal += sub.peso_local || 0;
+            });
+            if (somaPesoLocal > 100) {
+                alert(`❌ Erro na atividade "${atividade.descricao}": A soma dos pesos locais das sub-atividades (${somaPesoLocal}%) não pode exceder 100%.`);
+                validacaoSubAtividades = false;
+            }
+        }
+    });
 
-    // Update main activity descriptions
+    if (!validacaoSubAtividades) {
+        return;
+    }
+
     document.querySelectorAll('input[data-type="descricao-principal"]').forEach(input => {
         const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
         if (atividade) atividade.descricao = input.value;
     });
 
-    // Update sub-activity descriptions
     document.querySelectorAll('input[data-type="descricao-sub"]').forEach(input => {
         const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
         const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
         if (subAtividade) subAtividade.descricao = input.value;
     });
 
-    // Main activities weights
     document.querySelectorAll('[data-type="peso-global"]').forEach(input => {
         const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
         if (atividade) atividade.peso_global = parseFloat(input.value);
     });
 
-    // Main activities progress (only if no sub-activities)
     document.querySelectorAll('input[data-type="progresso-principal"]').forEach(input => {
         const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
         if (atividade && (!atividade.sub_atividades || atividade.sub_atividades.length === 0)) {
@@ -517,7 +465,6 @@ document.getElementById('cronograma-form').addEventListener('submit', function(e
         }
     });
 
-    // Sub-activities weights and progress
     document.querySelectorAll('[data-type="peso-local"]').forEach(input => {
         const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
         const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
@@ -528,39 +475,28 @@ document.getElementById('cronograma-form').addEventListener('submit', function(e
         const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
         if (subAtividade) subAtividade.progresso_atividade = parseFloat(input.value);
     });
-    
-    // O status e o progresso da atividade principal (com sub-atividades) são recalculados por `updateAllActivityStatuses()`
-    // e `getEffectiveActivityProgress` antes de salvar.
-    // Removidas as lógicas manuais de status e progresso de principal/sub-atividade que conflitavam.
 
-    salvarDadosObra(); // Salva o objeto dadosObra atualizado, que inclui o recalculo de todos os status.
+    salvarDadosObra();
 });
 
-// Lida com o envio do formulário de custos (botão "Lançar Custos")
 document.getElementById('custos-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Impede o recarregamento da página
+    event.preventDefault();
     const novoMaterial = parseFloat(document.getElementById('novo-material').value) || 0;
     const novaMaoDeObra = parseFloat(document.getElementById('nova-mao-de-obra').value) || 0;
 
     dadosObra.gastos.material = (dadosObra.gastos.material || 0) + novoMaterial;
     dadosObra.gastos.mao_de_obra = (dadosObra.gastos.mao_de_obra || 0) + novaMaoDeObra;
 
-    salvarDadosObra(); // Salva as alterações
+    salvarDadosObra();
 });
 
-
-// Funções de Ação (adicionar, remover, mover, limpar)
-
-/**
- * Adiciona uma nova atividade principal ao cronograma.
- */
 function adicionarAtividadePrincipal() {
     const descricao = document.getElementById('nova-atividade-descricao').value;
     const pesoGlobal = parseFloat(document.getElementById('nova-atividade-peso-global').value);
     const prazo = document.getElementById('nova-atividade-prazo').value;
 
     if (!descricao || isNaN(pesoGlobal) || pesoGlobal <= 0 || !prazo) {
-        alert('Por favor, preencha todos os campos da atividade principal: descrição, peso global e prazo.');
+        alert('❌ Por favor, preencha todos os campos da atividade principal: descrição, peso global e prazo.');
         return;
     }
 
@@ -568,29 +504,25 @@ function adicionarAtividadePrincipal() {
     const potentialTotal = currentTotal + pesoGlobal;
 
     if (potentialTotal > 100) {
-        alert(`Erro: O peso global total das atividades principais não pode exceder 100%. Com esta atividade, o total seria ${potentialTotal}%. Por favor, ajuste os pesos.`);
-        return; // Impede a adição
+        alert(`❌ Erro: O peso global total das atividades principais não pode exceder 100%. Com esta atividade, o total seria ${potentialTotal}%. Por favor, ajuste os pesos.`);
+        return;
     }
 
     const novaAtividade = {
         "id": gerarNovoId("ATV"),
         "descricao": descricao,
         "peso_global": pesoGlobal,
-        "progresso_atividade": 0, // Inicia em 0%
-        "status": getAutomatedStatus(0), // Status inicial automatizado
+        "progresso_atividade": 0,
+        "status": getAutomatedStatus(0),
         "prazo_final": prazo
     };
-    dadosObra.cronograma.push(novaAtividade); // Adiciona ao final da lista
-    salvarDadosObra(); // Salva e recarrega a view
-    // Limpa os campos do formulário
+    dadosObra.cronograma.push(novaAtividade);
+    salvarDadosObra();
     document.getElementById('nova-atividade-descricao').value = '';
     document.getElementById('nova-atividade-peso-global').value = '';
     document.getElementById('nova-atividade-prazo').value = '';
 }
 
-/**
- * Adiciona uma nova sub-atividade a uma atividade principal existente.
- */
 function adicionarSubAtividade() {
     const parentId = document.getElementById('parent-activity-select').value;
     const descricao = document.getElementById('nova-sub-atividade-descricao').value;
@@ -598,54 +530,45 @@ function adicionarSubAtividade() {
     const prazo = document.getElementById('nova-sub-atividade-prazo').value;
 
     if (!parentId || !descricao || isNaN(pesoLocal) || pesoLocal <= 0 || !prazo) {
-        alert('Por favor, selecione a atividade principal e preencha todos os campos da sub-atividade: descrição, peso local e prazo.');
+        alert('❌ Por favor, selecione a atividade principal e preencha todos os campos da sub-atividade: descrição, peso local e prazo.');
         return;
     }
 
     const atividadePrincipal = dadosObra.cronograma.find(a => a.id === parentId);
     if (!atividadePrincipal) {
-        alert('Atividade principal não encontrada.');
+        alert('❌ Atividade principal não encontrada.');
         return;
     }
 
-    // Se a atividade principal ainda não tem sub_atividades, inicializa o array
+    if (!validarPesoLocalSubAtividades(parentId, pesoLocal)) {
+        return;
+    }
+
     if (!atividadePrincipal.sub_atividades) {
         atividadePrincipal.sub_atividades = [];
     }
-    // Ao adicionar a primeira sub-atividade, a atividade principal deixa de ter progresso/status direto
-    // Estes serão agora calculados a partir das sub-atividades.
     if (atividadePrincipal.sub_atividades.length === 0) {
-        // Garantir que a atividade principal tem as propriedades certas para ser um 'container' de sub-atividades
-        // e que seu status/progresso será derivado.
-        atividadePrincipal.progresso_atividade = 0; // Será recalculado
-        atividadePrincipal.status = getAutomatedStatus(0); // Será recalculado
+        atividadePrincipal.progresso_atividade = 0;
+        atividadePrincipal.status = getAutomatedStatus(0);
     }
-
 
     const novaSubAtividade = {
         "id": gerarNovoId("SUB"),
         "descricao": descricao,
         "peso_local": pesoLocal,
-        "progresso_atividade": 0, // Inicia em 0%
-        "status": getAutomatedStatus(0), // Status inicial automatizado
+        "progresso_atividade": 0,
+        "status": getAutomatedStatus(0),
         "prazo_final": prazo
     };
-    atividadePrincipal.sub_atividades.push(novaSubAtividade); // Adiciona ao final da lista de sub-atividades
-    salvarDadosObra(); // Salva e recarrega a view
-    // Limpa os campos do formulário
+    atividadePrincipal.sub_atividades.push(novaSubAtividade);
+    salvarDadosObra();
     document.getElementById('nova-sub-atividade-descricao').value = '';
     document.getElementById('nova-sub-atividade-peso-local').value = '';
     document.getElementById('nova-sub-atividade-prazo').value = '';
 }
 
-/**
- * Remove uma atividade principal ou sub-atividade do cronograma.
- * @param {string} id - O ID da atividade principal.
- * @param {string} tipo - O tipo da atividade a ser removida ("principal" ou "sub").
- * @param {string} [subId=null] - O ID da sub-atividade, se o tipo for "sub".
- */
 function removerAtividade(id, tipo, subId = null) {
-    if (!confirm('Tem certeza que deseja remover esta atividade?')) return;
+    if (!confirm('❓ Tem certeza que deseja remover esta atividade?')) return;
 
     if (tipo === 'principal') {
         dadosObra.cronograma = dadosObra.cronograma.filter(atv => atv.id !== id);
@@ -653,38 +576,27 @@ function removerAtividade(id, tipo, subId = null) {
         const atividadePrincipal = dadosObra.cronograma.find(a => a.id === id);
         if (atividadePrincipal && atividadePrincipal.sub_atividades) {
             atividadePrincipal.sub_atividades = atividadePrincipal.sub_atividades.filter(sub => sub.id !== subId);
-            // Se a atividade principal ficar sem sub-atividades, remove o array sub_atividades
-            // e define status/progresso direto para ela novamente.
             if (atividadePrincipal.sub_atividades.length === 0) {
-                // A atividade principal volta a ser uma atividade "folha"
-                // Define seu próprio progresso e status.
-                atividadePrincipal.progresso_atividade = 0; // Reseta ou define um padrão
+                atividadePrincipal.progresso_atividade = 0;
                 atividadePrincipal.status = getAutomatedStatus(0);
-                delete atividadePrincipal.sub_atividades; // Remove a propriedade sub_atividades
+                delete atividadePrincipal.sub_atividades;
             }
         }
     }
-    salvarDadosObra(); // Salva e recarrega a view
+    salvarDadosObra();
 }
 
-/**
- * Move uma atividade principal ou sub-atividade para cima ou para baixo na lista.
- * @param {string} direction - A direção do movimento ("up" ou "down").
- * @param {string} activityId - O ID da atividade principal.
- * @param {string} [subActivityId=null] - O ID da sub-atividade, se aplicável.
- */
 function moverAtividade(direction, activityId, subActivityId = null) {
-    if (!subActivityId) { // Movendo atividade principal
+    if (!subActivityId) {
         const index = dadosObra.cronograma.findIndex(atv => atv.id === activityId);
         if (index === -1) return;
 
         const newIndex = direction === 'up' ? index - 1 : index + 1;
         if (newIndex < 0 || newIndex >= dadosObra.cronograma.length) return;
 
-        // Troca as posições no array usando desestruturação
         [dadosObra.cronograma[index], dadosObra.cronograma[newIndex]] = [dadosObra.cronograma[newIndex], dadosObra.cronograma[index]];
 
-    } else { // Movendo sub-atividade
+    } else {
         const atividadePrincipal = dadosObra.cronograma.find(atv => atv.id === activityId);
         if (!atividadePrincipal || !atividadePrincipal.sub_atividades) return;
 
@@ -694,32 +606,22 @@ function moverAtividade(direction, activityId, subActivityId = null) {
         const newSubIndex = direction === 'up' ? subIndex - 1 : subIndex + 1;
         if (newSubIndex < 0 || newSubIndex >= atividadePrincipal.sub_atividades.length) return;
 
-        // Troca as posições no array de sub-atividades usando desestruturação
         [atividadePrincipal.sub_atividades[subIndex], atividadePrincipal.sub_atividades[newSubIndex]] = [atividadePrincipal.sub_atividades[newSubIndex], atividadePrincipal.sub_atividades[subIndex]];
     }
 
-    salvarDadosObra(); // Salva e recarrega a view para refletir a nova ordem
+    salvarDadosObra();
 }
 
-/**
- * Limpa todo o cronograma da obra, redefinindo-o para um estado vazio.
- */
 function limparCronograma() {
-    if (confirm('Tem certeza que deseja LIMPAR TODO O CRONOGRAMA? Esta ação é irreversível e removerá todas as atividades!')) {
-        // Redefine o cronograma para um array vazio
+    if (confirm('❓ Tem certeza que deseja LIMPAR TODO O CRONOGRAMA? Esta ação é irreversível e removerá todas as atividades!')) {
         dadosObra.cronograma = [];
-        dadosObra.gastos.material = 0; // Opcional: resetar gastos também ao limpar cronograma
-        dadosObra.gastos.mao_de_obra = 0; // Opcional: resetar gastos também ao limpar cronograma
-        // Salva e recarrega a view
+        dadosObra.gastos.material = 0;
+        dadosObra.gastos.mao_de_obra = 0;
         salvarDadosObra();
-        alert('Cronograma limpo com sucesso! Agora você pode criar seu cronograma padrão.');
+        alert('✅ Cronograma limpo com sucesso! Agora você pode criar seu cronograma padrão.');
     }
 }
 
-/**
- * Alterna a visibilidade das sub-atividades de uma atividade principal.
- * @param {string} parentActivityId - O ID da atividade principal cujas sub-atividades serão alternadas.
- */
 function toggleSubActivities(parentActivityId) {
     const subActivityRows = document.querySelectorAll(`.sub-of-${parentActivityId}`);
     const toggleIcon = document.querySelector(`.toggle-icon[onclick="toggleSubActivities('${parentActivityId}')"]`);
@@ -729,6 +631,6 @@ function toggleSubActivities(parentActivityId) {
     });
 
     if (toggleIcon) {
-        toggleIcon.classList.toggle('expanded'); // Adiciona/remove a classe 'expanded' para girar o ícone
+        toggleIcon.classList.toggle('expanded');
     }
 }
