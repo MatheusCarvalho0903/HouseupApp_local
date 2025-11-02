@@ -1,0 +1,348 @@
+/* Houseup - Identidade Visual da Logo */
+
+/* Cores Base da LOGO */
+:root {
+    --houseup-dark-blue: #1B355B;   /* Azul Escuro da logo */
+    --houseup-medium-blue: #2D6FD1; /* Azul Médio da logo (principal) */
+    --houseup-light-blue: #4387E8;  /* Azul Claro da logo (acento/hover) */
+    --houseup-white: #FFFFFF;       /* Branco da logo */
+
+    /* Cores auxiliares (manter por contraste e funcionalidade) */
+    --houseup-off-white: #FDFDFD;
+    --houseup-light-gray: #F4F7F6;
+    --houseup-border-color: #D0D0D0;
+    --houseup-accent-green: #27AE60; /* Verde para progresso */
+    --houseup-error-red: #E74C3C;   /* Vermelho para erro/destrutivo */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--houseup-light-gray); /* Fundo suave para a página */
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: var(--houseup-white);
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 90%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px; /* Mais padding para o header */
+    background-color: var(--houseup-dark-blue); /* Fundo do header em Azul Escuro */
+    border-radius: 12px 12px 0 0; /* Arredondar só a parte de cima */
+    color: var(--houseup-white); /* Texto do header em branco */
+}
+
+/* Estilo para a logo */
+#houseup-logo {
+    max-width: 150px; /* Tamanho da logo */
+    height: auto;
+    margin-bottom: 15px; /* Espaçamento abaixo da logo */
+}
+
+header h1 {
+    color: var(--houseup-white); /* Título principal em branco */
+    margin-bottom: 10px;
+    font-size: 2.2em;
+}
+
+header p {
+    font-size: 1.1em;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    color: var(--houseup-white); /* Textos adicionais do header em branco */
+}
+
+.current-global-progress {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--houseup-accent-green); /* Mantido verde para indicar progresso positivo */
+}
+
+.section-card {
+    background-color: var(--houseup-white);
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-card h2 {
+    color: var(--houseup-dark-blue); /* Títulos de seção em Azul Escuro */
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--houseup-border-color);
+    padding-bottom: 10px;
+}
+
+/* Formulários */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="number"],
+.form-group input[type="text"],
+.form-group input[type="date"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+button[type="submit"],
+button[type="button"] {
+    background-color: var(--houseup-medium-blue); /* Botões principais em Azul Médio */
+    color: var(--houseup-white);
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover,
+button[type="button"]:hover {
+    background-color: var(--houseup-light-blue); /* Hover em Azul Claro */
+}
+
+/* Tabela */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    table-layout: auto;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid var(--houseup-border-color);
+    padding: 4px 8px;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 0.9em;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.data-table th {
+    background-color: var(--houseup-light-gray);
+    font-weight: bold;
+    color: var(--houseup-dark-blue); /* Texto do cabeçalho em Azul Escuro */
+}
+
+/* Estilos para a célula de progresso que contém o input e a barra */
+.progress-cell-content {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+}
+
+.progress-cell-content input[type="number"] {
+    width: 50px;
+    flex-shrink: 0;
+    padding: 3px;
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+/* Estilo para o container da barra de progresso */
+.progress-bar-container {
+    flex-grow: 1;
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* Estilo para o preenchimento da barra de progresso */
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--houseup-accent-green); /* Mantido verde para progresso */
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+}
+
+.data-table tbody td select {
+    padding: 3px;
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 3px;
+    width: 110px;
+    font-size: 0.9em;
+}
+
+/* Estilos para sub-atividades */
+.sub-activity-row {
+    background-color: var(--houseup-off-white); /* Fundo das sub-atividades quase branco */
+}
+.sub-activity-row td:first-child {
+    padding-left: 30px;
+    color: #555;
+}
+
+/* Estilos para o ícone de toggle */
+.toggle-icon {
+    cursor: pointer;
+    margin-right: 5px;
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+    font-size: 0.8em;
+}
+
+.toggle-icon.expanded {
+    transform: rotate(90deg);
+}
+
+/* Classe para esconder sub-atividades */
+.sub-activity-hidden {
+    display: none;
+}
+
+.client-link {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 15px;
+    background-color: var(--houseup-medium-blue); /* Link para cliente em Azul Médio */
+    color: var(--houseup-white);
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.client-link:hover {
+    background-color: var(--houseup-light-blue);
+}
+
+.add-forms {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.add-form-group {
+    flex: 1;
+    min-width: 300px;
+    background-color: var(--houseup-light-gray); /* Fundo suave para os cards de adicionar */
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.add-form-group h4 {
+    margin-top: 0;
+    color: var(--houseup-dark-blue); /* Títulos dos cards de adicionar em Azul Escuro */
+    margin-bottom: 15px;
+}
+
+.add-form-group input,
+.add-form-group select {
+    display: block;
+    width: calc(100% - 20px);
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--houseup-border-color);
+    border-radius: 4px;
+}
+
+/* Estilo para quando o total de pesos exceder 100% */
+#total-peso-global-display[style*="color: red"] {
+    font-weight: bold;
+    color: var(--houseup-error-red) !important;
+}
+
+.disabled-input {
+    background-color: #EFEFEF; /* Um cinza bem claro para inputs/selects desabilitados */
+    cursor: not-allowed;
+}
+
+.clear-button {
+    background-color: var(--houseup-medium-blue);
+    color: var(--houseup-white);
+}
+
+.clear-button:hover {
+    background-color: var(--houseup-light-blue);
+}
+
+/* Estilos para os botões de ação na tabela */
+.action-buttons {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.action-buttons button {
+    padding: 2px 4px;
+    font-size: 0.8em;
+    margin-top: 0;
+    line-height: 1;
+    height: auto;
+    background-color: var(--houseup-medium-blue); /* Botões de ação em Azul Médio */
+    color: var(--houseup-white);
+}
+
+.action-buttons button:hover {
+    background-color: var(--houseup-light-blue);
+}
+
+.action-buttons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--houseup-border-color);
+}
+
+/* Estilo para os inputs de descrição na tabela */
+.activity-description-input {
+    border: none;
+    background: transparent;
+    font-size: inherit;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    vertical-align: middle;
+    font-weight: bold;
+    white-space: normal;
+}
+
+/* Estilo específico para inputs de descrição de sub-atividades */
+.sub-activity-row .activity-description-input {
+    font-weight: normal;
+    font-style: italic;
+}
+
+/* Para o hífen das sub-atividades */
+.sub-indent-char {
+    display: inline-block;
+    vertical-align: middle;
+}

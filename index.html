@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Houseup - Gestão da Obra</title>
+    <!-- Adicione esta linha para o seu CSS -->
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <div class="container">
+        <header>
+            <!-- Certifique-se de que esta URL está correta e a imagem é acessível -->
+            <img id="houseup-logo" src="https://i.imgur.com/OG7g4lu.png" alt="Houseup Construtora Logo">
+            <h1>Gestão da Obra</h1> <!-- Removi "Houseup - " daqui, pois a logo já representa -->
+            <p><strong>Obra:</strong> <span id="admin-nome-obra"></span> | <strong>Código:</strong> <span id="admin-codigo-obra"></span></p>
+            <p class="current-global-progress">Progresso Global Atual: <span id="admin-progresso-global">0%</span></p>
+            <!-- Lembre-se de substituir o link abaixo pelo seu CodePen do Cliente! -->
+            <a href="https://codepen.io/OneAIAdapta/pen/MWjKLxP"  class="client-link">Ver Aplicativo do Cliente</a>
+        </header>
+
+        <section class="section-card">
+            <h2>Gestão do Cronograma</h2>
+            <form id="cronograma-form">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Atividade / Sub-Atividade</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Peso (%)</th>
+                            <th scope="col">Progresso (%)</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Prazo Final</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cronograma-body">
+                        <!-- Linhas de atividade e sub-atividade serão carregadas aqui pelo JS -->
+                    </tbody>
+                </table>
+                <button type="submit" style="margin-right: 10px;">Salvar Cronograma</button>
+                <button type="button" onclick="limparCronograma()" class="clear-button">Limpar Cronograma</button>
+            </form>
+
+            <hr style="margin: 30px 0;">
+
+            <h3>Adicionar Nova Atividade / Sub-Atividade</h3>
+            <div class="add-forms">
+                <div class="add-form-group">
+                    <h4>Adicionar Atividade Principal</h4>
+                    <p>Soma dos Pesos Globais Atuais: <span id="total-peso-global-display">0</span>%</p>
+                    <input type="text" id="nova-atividade-descricao" placeholder="Descrição da Atividade Principal">
+                    <input type="number" id="nova-atividade-peso-global" min="0" max="100" placeholder="Peso Global (%)">
+                    <input type="date" id="nova-atividade-prazo" placeholder="Prazo Final">
+                    <button type="button" onclick="adicionarAtividadePrincipal()">Adicionar Atividade</button>
+                </div>
+                <div class="add-form-group">
+                    <h4>Adicionar Sub-Atividade</h4>
+                    <select id="parent-activity-select">
+                        <option value="">Selecione a Atividade Principal</option>
+                    </select>
+                    <input type="text" id="nova-sub-atividade-descricao" placeholder="Descrição da Sub-Atividade">
+                    <input type="number" id="nova-sub-atividade-peso-local" min="0" max="100" placeholder="Peso Local (%)(Em relação à principal)">
+                    <input type="date" id="nova-sub-atividade-prazo" placeholder="Prazo Final">
+                    <button type="button" onclick="adicionarSubAtividade()">Adicionar Sub-Atividade</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <h2>Lançamento de Custos</h2>
+            <p>Total Material: <span id="total-material-admin">R$ 0,00</span></p>
+            <p>Total Mão de Obra: <span id="total-mao-de-obra-admin">R$ 0,00</span></p>
+            <form id="custos-form">
+                <div class="form-group">
+                    <label for="novo-material">Novo Gasto Material (R$):</label>
+                    <input type="number" id="novo-material" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="nova-mao-de-obra">Novo Gasto Mão de Obra (R$):</label>
+                    <input type="number" id="nova-mao-de-obra" step="0.01" min="0" value="0">
+                </div>
+                <button type="submit">Lançar Custos</button>
+            </form>
+        </section>
+    </div>
+    <!-- Adicione esta linha para o seu JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html></html>
