@@ -445,147 +445,148 @@ button[type="button"]:hover {
         margin-bottom: 10px; /* Espaço entre eles */
     }
 
-    /* --- TRATAMENTO ESPECIAL PARA A TABELA (CRONOGRAMA) --- */
-    /* Tabelas são difíceis em mobile, esta é uma abordagem comum */
+    /* --- NOVA ABORDAGEM PARA MOBILE: CARDS EM VEZ DE TABELA --- */
+    
+    /* Esconde a tabela no mobile */
     .data-table {
-        border: 0; /* Remove bordas da tabela principal */
-        width: 100%;
+        display: none;
     }
 
-    .data-table thead {
-        display: none; /* Esconde o cabeçalho da tabela em telas pequenas */
+    /* Container para os cards mobile */
+    #cronograma-body {
+        display: block !important;
     }
 
+    /* Cada linha da tabela vira um card */
     .data-table tr {
-        display: block; /* Cada linha da tabela vira um bloco */
-        margin-bottom: 15px;
+        display: block;
+        background-color: var(--houseup-white);
         border: 1px solid var(--houseup-border-color);
         border-radius: 8px;
-        background-color: var(--houseup-white);
+        margin-bottom: 15px;
         padding: 15px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .data-table td {
-        display: block; /* Cada célula vira um bloco */
-        text-align: right; /* Alinha o conteúdo à direita */
-        padding: 10px 0;
-        border-bottom: 1px dotted #eee; /* Linha pontilhada entre as "células" */
         position: relative;
-        padding-left: 45%; /* Dá espaço para o "label" */
-        min-height: 20px;
     }
 
-    .data-table td:last-child {
-        border-bottom: 0; /* Remove a borda da última célula */
-    }
-
-    /* Adiciona labels para as "células" simulando o cabeçalho */
-    .data-table td::before {
-        content: attr(data-label); /* Usa o atributo data-label como conteúdo */
-        position: absolute;
-        left: 0;
-        width: 40%; /* Ajusta a largura do label */
-        padding-right: 10px;
-        white-space: nowrap; /* Impede quebra de linha */
-        overflow: hidden;
-        text-overflow: ellipsis; /* Adiciona reticências se o texto for muito longo */
-        font-weight: bold;
-        text-align: left;
-        color: var(--houseup-dark-blue);
-        font-size: 0.9em;
-    }
-
-    /* Estilos para as sub-atividades na tabela responsiva */
+    /* Sub-atividades com destaque visual */
     .sub-activity-row {
         background-color: var(--houseup-off-white);
-        border-left: 4px solid var(--houseup-light-blue); /* Destaque visual para sub-atividades */
+        border-left: 4px solid var(--houseup-light-blue);
+        margin-left: 10px;
+        margin-top: 10px;
     }
 
-    .sub-activity-row .action-buttons {
-        /* Garante que os botões de ação fiquem em linha para sub-atividades */
-        display: flex;
-        flex-wrap: wrap; /* Permite quebrar linha se não couberem */
-        justify-content: flex-end; /* Alinha à direita */
-        gap: 5px; /* Espaçamento entre os botões */
+    /* Cada célula vira uma linha do card */
+    .data-table td {
+        display: block;
+        padding: 8px 0;
+        border: none;
+        text-align: left;
+        position: relative;
+        min-height: auto;
     }
 
-    .sub-activity-row .action-buttons button {
-        width: auto; /* Deixa os botões voltarem ao tamanho normal */
-        flex-grow: 1; /* Permite que eles cresçam para preencher o espaço */
-        max-width: 80px; /* Limita o tamanho máximo dos botões */
-        font-size: 0.9em;
-        padding: 8px 10px;
-        min-height: 36px;
+    /* Labels para cada campo */
+    .data-table td:nth-child(1)::before { content: "Atividade: "; }
+    .data-table td:nth-child(2)::before { content: "Tipo: "; }
+    .data-table td:nth-child(3)::before { content: "Peso: "; }
+    .data-table td:nth-child(4)::before { content: "Progresso: "; }
+    .data-table td:nth-child(5)::before { content: "Status: "; }
+    .data-table td:nth-child(6)::before { content: "Prazo: "; }
+    .data-table td:nth-child(7)::before { content: "Ações: "; }
+
+    .data-table td::before {
+        font-weight: bold;
+        color: var(--houseup-dark-blue);
+        display: inline-block;
+        width: 80px;
+        margin-right: 10px;
     }
 
-    /* Ajusta a exibição dos botões de ação para ficarem mais compactos e horizontais */
-    .action-buttons {
-        display: flex;
-        flex-wrap: wrap; /* Permite quebrar a linha se não houver espaço suficiente */
-        gap: 5px; /* Espaço entre os botões */
-        justify-content: flex-end; /* Alinha os botões à direita da célula */
-        padding-top: 5px; /* Pequeno espaçamento do conteúdo acima */
-    }
-
-    .action-buttons button {
-        width: auto; /* Permite que o botão se ajuste ao conteúdo */
-        padding: 8px 12px;
-        font-size: 0.9em;
-        margin-bottom: 0; /* Remove a margem extra adicionada antes */
-        min-height: 40px; /* Altura mínima para touch */
-    }
-
-    /* Ajuste para o input de descrição, para ocupar o espaço sem o label em mobile */
+    /* Ajustes para inputs e selects dentro dos cards */
     .data-table td input[type="text"] {
-        width: 100%; /* Ocupa toda a largura disponível da célula */
-        text-align: left; /* Alinha texto à esquerda para melhor leitura */
+        width: calc(100% - 90px);
+        display: inline-block;
         padding: 8px;
         border: 1px solid var(--houseup-border-color);
         border-radius: 4px;
-        font-size: 16px; /* Evita zoom no iOS */
+        font-size: 16px;
+        vertical-align: top;
     }
 
-    .data-table td .toggle-icon {
-        position: absolute;
-        left: 0;
-        top: 10px;
-        font-size: 1.2em;
-        color: var(--houseup-medium-blue);
-        z-index: 1;
-    }
-
-    .data-table td .progress-cell-content {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end; /* Alinha os itens à direita */
-        gap: 8px;
-    }
-
-    .data-table td .progress-cell-content input {
-        width: 80px; /* Largura fixa para o input de progresso em mobile */
+    .data-table td input[type="number"] {
+        width: 80px;
         padding: 8px;
-        font-size: 16px; /* Evita zoom no iOS */
+        border: 1px solid var(--houseup-border-color);
+        border-radius: 4px;
+        font-size: 16px;
         text-align: center;
     }
 
-    .data-table td .progress-bar-container {
-        width: 100%; /* Ocupa a largura total da célula */
-        height: 12px; /* Um pouco mais alta no mobile */
-    }
-
-    /* Melhora os selects no mobile */
     .data-table td select {
-        width: 100%;
-        padding: 10px;
-        font-size: 16px; /* Evita zoom no iOS */
+        width: calc(100% - 90px);
+        padding: 8px;
         border: 1px solid var(--houseup-border-color);
         border-radius: 4px;
+        font-size: 16px;
         background-color: var(--houseup-white);
+    }
+
+    /* Progresso especial */
+    .data-table td .progress-cell-content {
+        display: block;
+        margin-top: 5px;
+    }
+
+    .data-table td .progress-cell-content input {
+        width: 80px;
+        margin-bottom: 8px;
+    }
+
+    .data-table td .progress-bar-container {
+        width: 100%;
+        height: 12px;
+        background-color: #e0e0e0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .data-table td .progress-bar-fill {
+        height: 100%;
+        background-color: var(--houseup-accent-green);
+        transition: width 0.3s ease-in-out;
+    }
+
+    /* Botões de ação */
+    .data-table td .action-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+        flex-wrap: wrap;
+    }
+
+    .data-table td .action-buttons button {
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.9em;
+        min-height: 36px;
+        margin-bottom: 0;
+        flex: 1;
+        min-width: 60px;
+    }
+
+    /* Toggle icon para sub-atividades */
+    .data-table td .toggle-icon {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 1.2em;
+        color: var(--houseup-medium-blue);
     }
 }
 
-/* --- Estilos para telas ainda menores (ex: celulares antigos, modo paisagem) --- */
+/* --- Estilos para telas ainda menores --- */
 @media (max-width: 480px) {
     .container {
         padding: 10px;
@@ -600,27 +601,16 @@ button[type="button"]:hover {
         font-size: 1.2em;
     }
 
-    h3 {
-        font-size: 1.1em;
-    }
-
-    /* Ajustes finos para os botões de ação em telas muito pequenas */
-    .action-buttons button {
-        padding: 6px 8px;
-        font-size: 0.85em;
-        min-height: 36px;
-    }
-
     .data-table td::before {
-        width: 35%; /* Ajusta a largura do label para dar mais espaço ao valor */
-        font-size: 0.85em;
+        width: 70px;
+        font-size: 0.9em;
     }
 
-    .data-table td {
-        padding-left: 38%; /* Reduz um pouco o padding-left */
+    .data-table td input[type="text"] {
+        width: calc(100% - 80px);
     }
 
-    .current-global-progress {
-        font-size: 1.2em;
+    .data-table td select {
+        width: calc(100% - 80px);
     }
 }
