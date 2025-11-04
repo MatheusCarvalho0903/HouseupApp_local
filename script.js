@@ -70,67 +70,43 @@ function getAutomatedStatus(progressValue) {
     }
 }
 
-// FUNÇÃO CORRIGIDA: Calcula o progresso efetivo de uma atividade
 function getEffectiveActivityProgress(atividade) {
     if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
         let progressoPonderado = 0;
         let pesoTotalSubAtividades = 0;
         
         atividade.sub_atividades.forEach(sub => {
-            const pesoLocal = sub.peso_local || 0;
-            const progressoSub = sub.progresso_atividade || 0;
+            const pesoLocal = parseFloat(sub.peso_local) || 0;
+            const progressoSub = parseFloat(sub.progresso_atividade) || 0;
             
             progressoPonderado += (pesoLocal * progressoSub);
             pesoTotalSubAtividades += pesoLocal;
         });
         
-        // Se não há peso total, retorna 0
         if (pesoTotalSubAtividades === 0) {
             return 0;
         }
         
-        // Calcula o progresso como média ponderada
         const progressoCalculado = progressoPonderado / pesoTotalSubAtividades;
-        
-        console.log(`Atividade ${atividade.descricao}:`, {
-            progressoPonderado,
-            pesoTotalSubAtividades,
-            progressoCalculado: progressoCalculado.toFixed(2)
-        });
-        
         return parseFloat(progressoCalculado.toFixed(2));
     } else {
-        return atividade.progresso_atividade || 0;
+        return parseFloat(atividade.progresso_atividade) || 0;
     }
 }
 
-// FUNÇÃO CORRIGIDA: Calcula o progresso global da obra
 function calcularProgressoGlobal(cronograma) {
     let progressoGlobalPonderado = 0;
     let pesoGlobalTotal = 0;
 
     cronograma.forEach(atividadePrincipal => {
-        const pesoGlobal = atividadePrincipal.peso_global || 0;
+        const pesoGlobal = parseFloat(atividadePrincipal.peso_global) || 0;
         const progressoEfetivo = getEffectiveActivityProgress(atividadePrincipal);
         
         progressoGlobalPonderado += (pesoGlobal * progressoEfetivo);
         pesoGlobalTotal += pesoGlobal;
-        
-        console.log(`Global - ${atividadePrincipal.descricao}:`, {
-            pesoGlobal,
-            progressoEfetivo,
-            contribuicao: (pesoGlobal * progressoEfetivo).toFixed(2)
-        });
     });
 
     const progressoGlobal = pesoGlobalTotal === 0 ? 0 : progressoGlobalPonderado / pesoGlobalTotal;
-    
-    console.log('Progresso Global Final:', {
-        progressoGlobalPonderado: progressoGlobalPonderado.toFixed(2),
-        pesoGlobalTotal,
-        progressoGlobal: progressoGlobal.toFixed(2)
-    });
-    
     return parseFloat(progressoGlobal.toFixed(2));
 }
 
@@ -141,7 +117,7 @@ function validarPesoLocalSubAtividades(atividadePrincipalId, novoPesoLocal, subA
     let somaAtual = 0;
     atividadePrincipal.sub_atividades.forEach(sub => {
         if (subAtividadeId && sub.id === subAtividadeId) return;
-        somaAtual += sub.peso_local || 0;
+        somaAtual += parseFloat(sub.peso_local) || 0;
     });
 
     const somaTotal = somaAtual + novoPesoLocal;
@@ -159,16 +135,69 @@ function formatarMoeda(valor) {
 }
 
 async function salvarDadosObra() {
+    atualizarTodosDadosDoFormulario();
     updateAllActivityStatuses();
 
     try {
         await dadosObraRef.set(dadosObra);
-        alert('✅ Dados salvos com sucesso no Firestore!');
+        console.log('✅ Dados salvos no Firestore:', dadosObra);
+        alert('✅ Dados salvos com sucesso!');
         carregarAdminView();
     } catch (error) {
         console.error("Erro ao salvar dados no Firestore: ", error);
         alert('❌ Erro ao salvar dados. Verifique o console do navegador (F12) para mais detalhes.');
     }
+}
+
+function atualizarTodosDadosDoFormulario() {
+    console.log('🔄 Atualizando todos os dados do formulário...');
+    
+    document.querySelectorAll('input[data-type="descricao-principal"]').forEach(input => {
+        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        if (atividade) {
+            atividade.descricao = input.value;
+        }
+    });
+
+    document.querySelectorAll('input[data-type="peso-global"]').forEach(input => {
+        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        if (atividade) {
+            atividade.peso_global = parseFloat(input.value) || 0;
+        }
+    });
+
+    document.querySelectorAll('input[data-type="progresso-principal"]').forEach(input => {
+        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        if (atividade && (!atividade.sub_atividades || atividade.sub_atividades.length === 0)) {
+            atividade.progresso_atividade = parseFloat(input.value) || 0;
+        }
+    });
+
+    document.querySelectorAll('input[data-type="descricao-sub"]').forEach(input => {
+        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
+        if (subAtividade) {
+            subAtividade.descricao = input.value;
+        }
+    });
+
+    document.querySelectorAll('input[data-type="peso-local"]').forEach(input => {
+        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
+        if (subAtividade) {
+            subAtividade.peso_local = parseFloat(input.value) || 0;
+        }
+    });
+
+    document.querySelectorAll('input[data-type="progresso-sub"]').forEach(input => {
+        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
+        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
+        if (subAtividade) {
+            subAtividade.progresso_atividade = parseFloat(input.value) || 0;
+        }
+    });
+
+    console.log('✅ Dados atualizados:', dadosObra);
 }
 
 function updateAllActivityStatuses() {
@@ -179,7 +208,7 @@ function updateAllActivityStatuses() {
 
         if (atividadePrincipal.sub_atividades) {
             atividadePrincipal.sub_atividades.forEach(sub => {
-                sub.status = getAutomatedStatus(sub.progresso_atividade);
+                sub.status = getAutomatedStatus(parseFloat(sub.progresso_atividade) || 0);
             });
         }
     });
@@ -190,7 +219,7 @@ function gerarNovoId(prefixo) {
 }
 
 function sumCurrentGlobalWeights() {
-    return dadosObra.cronograma.reduce((sum, activity) => sum + (activity.peso_global || 0), 0);
+    return dadosObra.cronograma.reduce((sum, activity) => sum + (parseFloat(activity.peso_global) || 0), 0);
 }
 
 function updatePesoGlobalDisplay(total, elementId = 'total-peso-global-display') {
@@ -215,7 +244,6 @@ function handleNewPesoGlobalInput() {
     updatePesoGlobalDisplay(potentialTotal);
 }
 
-// FUNÇÃO CORRIGIDA: Atualiza progresso e recalcula tudo
 function updateProgressBarVisual(inputElement) {
     const progressValue = parseFloat(inputElement.value) || 0;
     const progressBarFill = inputElement.nextElementSibling?.querySelector('.progress-bar-fill');
@@ -224,7 +252,6 @@ function updateProgressBarVisual(inputElement) {
         progressBarFill.style.width = `${progressValue}%`;
     }
 
-    // Validação para peso local de sub-atividades
     if (inputElement.dataset.type === 'peso-local') {
         const atividadePrincipalId = inputElement.dataset.id;
         const subAtividadeId = inputElement.dataset.subId;
@@ -241,45 +268,41 @@ function updateProgressBarVisual(inputElement) {
 
     const activityId = inputElement.dataset.id;
     const subActivityId = inputElement.dataset.subId;
-    let currentActivity;
 
     if (subActivityId) {
         const principal = dadosObra.cronograma.find(a => a.id === activityId);
-        currentActivity = principal?.sub_atividades?.find(s => s.id === subActivityId);
-    } else {
-        currentActivity = dadosObra.cronograma.find(a => a.id === activityId);
-    }
-
-    if (currentActivity) {
-        // Atualiza o valor no objeto de dados
-        if (inputElement.dataset.type === 'progresso-principal' || inputElement.dataset.type === 'progresso-sub') {
-            currentActivity.progresso_atividade = progressValue;
-        } else if (inputElement.dataset.type === 'peso-local') {
-            currentActivity.peso_local = progressValue;
-        }
+        const currentActivity = principal?.sub_atividades?.find(s => s.id === subActivityId);
         
-        // Atualiza o status da atividade atual
-        if (inputElement.dataset.type === 'progresso-principal' || inputElement.dataset.type === 'progresso-sub') {
-            currentActivity.status = getAutomatedStatus(progressValue);
-            
-            const statusSelect = subActivityId
-                ? document.querySelector(`select[data-id="${activityId}"][data-sub-id="${subActivityId}"][data-type="status-sub"]`)
-                : document.querySelector(`select[data-id="${activityId}"][data-type="status-principal"]`);
-
-            if (statusSelect) {
-                statusSelect.value = currentActivity.status;
+        if (currentActivity) {
+            if (inputElement.dataset.type === 'progresso-sub') {
+                currentActivity.progresso_atividade = progressValue;
+                currentActivity.status = getAutomatedStatus(progressValue);
+                
+                const statusSelect = document.querySelector(`select[data-id="${activityId}"][data-sub-id="${subActivityId}"][data-type="status-sub"]`);
+                if (statusSelect) {
+                    statusSelect.value = currentActivity.status;
+                }
+                
+                console.log(`Sub-atividade ${currentActivity.descricao} atualizada:`, {
+                    progresso: progressValue,
+                    status: currentActivity.status
+                });
+                
+            } else if (inputElement.dataset.type === 'peso-local') {
+                currentActivity.peso_local = progressValue;
+                console.log(`Peso local da sub-atividade ${currentActivity.descricao} atualizado para:`, progressValue);
             }
-        }
-        
-        // Se mudou uma sub-atividade, recalcula a atividade principal
-        if (subActivityId) {
-            const principalActivity = dadosObra.cronograma.find(a => a.id === activityId);
-            if (principalActivity) {
-                const effectivePrincipalProgress = getEffectiveActivityProgress(principalActivity);
-                principalActivity.progresso_atividade = effectivePrincipalProgress;
-                principalActivity.status = getAutomatedStatus(effectivePrincipalProgress);
+            
+            if (principal) {
+                const effectivePrincipalProgress = getEffectiveActivityProgress(principal);
+                principal.progresso_atividade = effectivePrincipalProgress;
+                principal.status = getAutomatedStatus(effectivePrincipalProgress);
 
-                // Atualiza a interface da atividade principal
+                console.log(`Atividade principal ${principal.descricao} recalculada:`, {
+                    progresso: effectivePrincipalProgress,
+                    status: principal.status
+                });
+
                 const principalProgressInput = document.querySelector(`input[data-id="${activityId}"][data-type="progresso-principal"]`);
                 const principalStatusSelect = document.querySelector(`select[data-id="${activityId}"][data-type="status-principal"]`);
                 const principalProgressBar = document.querySelector(`input[data-id="${activityId}"][data-type="progresso-principal"]`)?.nextElementSibling?.querySelector('.progress-bar-fill');
@@ -291,26 +314,43 @@ function updateProgressBarVisual(inputElement) {
                     principalProgressBar.style.width = `${effectivePrincipalProgress}%`;
                 }
                 if (principalStatusSelect) {
-                    principalStatusSelect.value = principalActivity.status;
-                }
-                
-                // Atualiza o progresso global
-                const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
-                const progressoGlobalElement = document.getElementById('admin-progresso-global');
-                if (progressoGlobalElement) {
-                    progressoGlobalElement.textContent = `${progressoGlobal.toFixed(0)}%`;
+                    principalStatusSelect.value = principal.status;
                 }
             }
         }
-        // Se mudou uma atividade principal sem sub-atividades, só atualiza o global
-        else if (!currentActivity.sub_atividades || currentActivity.sub_atividades.length === 0) {
-            const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
-            const progressoGlobalElement = document.getElementById('admin-progresso-global');
-            if (progressoGlobalElement) {
-                progressoGlobalElement.textContent = `${progressoGlobal.toFixed(0)}%`;
+    } else {
+        const currentActivity = dadosObra.cronograma.find(a => a.id === activityId);
+        
+        if (currentActivity) {
+            if (inputElement.dataset.type === 'progresso-principal') {
+                if (!currentActivity.sub_atividades || currentActivity.sub_atividades.length === 0) {
+                    currentActivity.progresso_atividade = progressValue;
+                    currentActivity.status = getAutomatedStatus(progressValue);
+                    
+                    const statusSelect = document.querySelector(`select[data-id="${activityId}"][data-type="status-principal"]`);
+                    if (statusSelect) {
+                        statusSelect.value = currentActivity.status;
+                    }
+                    
+                    console.log(`Atividade principal ${currentActivity.descricao} atualizada:`, {
+                        progresso: progressValue,
+                        status: currentActivity.status
+                    });
+                }
+            } else if (inputElement.dataset.type === 'peso-global') {
+                currentActivity.peso_global = progressValue;
+                console.log(`Peso global da atividade ${currentActivity.descricao} atualizado para:`, progressValue);
             }
         }
     }
+    
+    const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
+    const progressoGlobalElement = document.getElementById('admin-progresso-global');
+    if (progressoGlobalElement) {
+        progressoGlobalElement.textContent = `${progressoGlobal.toFixed(0)}%`;
+    }
+    
+    console.log('Progresso global atualizado:', progressoGlobal.toFixed(2) + '%');
 }
 
 function carregarAdminView() {
@@ -348,7 +388,7 @@ function carregarAdminView() {
         row.innerHTML = `
             <td data-label="Atividade / Sub-Atividade">${firstCellContent}</td>
             <td data-label="Tipo">Principal</td>
-            <td data-label="Peso (%)"><input type="number" min="0" max="100" value="${atividadePrincipal.peso_global}" data-id="${atividadePrincipal.id}" data-type="peso-global"></td>
+            <td data-label="Peso (%)"><input type="number" min="0" max="100" value="${atividadePrincipal.peso_global}" data-id="${atividadePrincipal.id}" data-type="peso-global" class="activity-progress-input"></td>
             <td data-label="Progresso (%)">
                 <div class="progress-cell-content">
                     <input type="number" min="0" max="100" value="${principalEffectiveProgress}" ${isPrincipalProgressDisabled} class="${principalProgressClass} activity-progress-input" data-id="${atividadePrincipal.id}" data-type="progresso-principal">
@@ -430,6 +470,8 @@ function carregarAdminView() {
         input.addEventListener('input', () => updateProgressBarVisual(input));
         updateProgressBarVisual(input);
     });
+    
+    console.log('✅ Admin view carregada com dados:', dadosObra);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -454,26 +496,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 document.getElementById('cronograma-form').addEventListener('submit', function(event) {
     event.preventDefault();
+    console.log('🔄 Salvando cronograma...');
 
-    let tempCronograma = JSON.parse(JSON.stringify(dadosObra.cronograma));
+    atualizarTodosDadosDoFormulario();
 
-    document.querySelectorAll('[data-type="peso-global"]').forEach(input => {
-        const atividade = tempCronograma.find(a => a.id === input.dataset.id);
-        if (atividade) atividade.peso_global = parseFloat(input.value);
-    });
-
-    const newTotalPesoGlobal = tempCronograma.reduce((sum, activity) => sum + (activity.peso_global || 0), 0);
+    const newTotalPesoGlobal = dadosObra.cronograma.reduce((sum, activity) => sum + (parseFloat(activity.peso_global) || 0), 0);
     if (newTotalPesoGlobal > 100) {
-        alert(`❌ Erro: O peso global total das atividades principais não pode exceder 100%. Com esta atividade, o total seria ${newTotalPesoGlobal}%. Por favor, ajuste os pesos na tabela.`);
+        alert(`❌ Erro: O peso global total das atividades principais não pode exceder 100%. Atual: ${newTotalPesoGlobal}%. Por favor, ajuste os pesos na tabela.`);
         return;
     }
 
     let validacaoSubAtividades = true;
-    tempCronograma.forEach(atividade => {
+    dadosObra.cronograma.forEach(atividade => {
         if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
             let somaPesoLocal = 0;
             atividade.sub_atividades.forEach(sub => {
-                somaPesoLocal += sub.peso_local || 0;
+                somaPesoLocal += parseFloat(sub.peso_local) || 0;
             });
             if (somaPesoLocal > 100) {
                 alert(`❌ Erro na atividade "${atividade.descricao}": A soma dos pesos locais das sub-atividades (${somaPesoLocal}%) não pode exceder 100%.`);
@@ -485,41 +523,6 @@ document.getElementById('cronograma-form').addEventListener('submit', function(e
     if (!validacaoSubAtividades) {
         return;
     }
-
-    document.querySelectorAll('input[data-type="descricao-principal"]').forEach(input => {
-        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        if (atividade) atividade.descricao = input.value;
-    });
-
-    document.querySelectorAll('input[data-type="descricao-sub"]').forEach(input => {
-        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
-        if (subAtividade) subAtividade.descricao = input.value;
-    });
-
-    document.querySelectorAll('[data-type="peso-global"]').forEach(input => {
-        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        if (atividade) atividade.peso_global = parseFloat(input.value);
-    });
-
-    document.querySelectorAll('input[data-type="progresso-principal"]').forEach(input => {
-        const atividade = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        if (atividade && (!atividade.sub_atividades || atividade.sub_atividades.length === 0)) {
-            atividade.progresso_atividade = parseFloat(input.value);
-        }
-    });
-
-    document.querySelectorAll('[data-type="peso-local"]').forEach(input => {
-        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
-        if (subAtividade) subAtividade.peso_local = parseFloat(input.value);
-    });
-    
-    document.querySelectorAll('input[data-type="progresso-sub"]').forEach(input => {
-        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === input.dataset.id);
-        const subAtividade = atividadePrincipal?.sub_atividades?.find(s => s.id === input.dataset.subId);
-        if (subAtividade) subAtividade.progresso_atividade = parseFloat(input.value);
-    });
 
     salvarDadosObra();
 });
