@@ -25,15 +25,15 @@ const initialDadosObra = {
         {
             "id": "ATV001", "descricao": "Fundação", "peso_global": 25,
             "sub_atividades": [
-                { "id": "SUB001", "descricao": "Fundação - Escavação", "peso_local": 40.5, "progresso_atividade": 0, "prazo_final": "2025-10-20" },
-                { "id": "SUB002", "descricao": "Fundação - Concretagem", "peso_local": 59.5, "progresso_atividade": 0, "prazo_final": "2025-10-28" }
+                { "id": "SUB001", "descricao": "Fundação - Escavação", "peso_local": 10, "progresso_atividade": 0, "prazo_final": "2025-10-20" },
+                { "id": "SUB002", "descricao": "Fundação - Concretagem", "peso_local": 15, "progresso_atividade": 0, "prazo_final": "2025-10-28" }
             ]
         },
         {
             "id": "ATV002", "descricao": "Estrutura", "peso_global": 18,
             "sub_atividades": [
-                { "id": "SUB003", "descricao": "Estrutura - Pilares Térreo", "peso_local": 45.25, "progresso_atividade": 0, "prazo_final": "2025-11-10" },
-                { "id": "SUB004", "descricao": "Estrutura - Lajes", "peso_local": 54.75, "progresso_atividade": 0, "prazo_final": "2025-11-20" }
+                { "id": "SUB003", "descricao": "Estrutura - Pilares Térreo", "peso_local": 8, "progresso_atividade": 0, "prazo_final": "2025-11-10" },
+                { "id": "SUB004", "descricao": "Estrutura - Lajes", "peso_local": 10, "progresso_atividade": 0, "prazo_final": "2025-11-20" }
             ]
         },
         {
@@ -42,16 +42,16 @@ const initialDadosObra = {
         {
             "id": "ATV004", "descricao": "Instalações Elétricas", "peso_global": 10,
             "sub_atividades": [
-                { "id": "SUB005", "descricao": "Instalação do Quadro de Distribuição", "peso_local": 30.35, "progresso_atividade": 0, "prazo_final": "2025-11-10" },
-                { "id": "SUB006", "descricao": "Passagem de Eletrodutos", "peso_local": 69.65, "progresso_atividade": 0, "prazo_final": "2025-11-15" }
+                { "id": "SUB005", "descricao": "Instalação do Quadro de Distribuição", "peso_local": 3, "progresso_atividade": 0, "prazo_final": "2025-11-10" },
+                { "id": "SUB006", "descricao": "Passagem de Eletrodutos", "peso_local": 7, "progresso_atividade": 0, "prazo_final": "2025-11-15" }
             ]
         },
         {
             "id": "ATV005", "descricao": "Acabamentos", "peso_global": 35,
             "sub_atividades": [
-                { "id": "SUB007", "descricao": "Assentamento de Pisos", "peso_local": 50.5, "progresso_atividade": 0, "prazo_final": "2025-12-01" },
-                { "id": "SUB008", "descricao": "Pintura Interna", "peso_local": 29.75, "progresso_atividade": 0, "prazo_final": "2025-12-10" },
-                { "id": "SUB009", "descricao": "Instalação de Louças e Metais", "peso_local": 19.75, "progresso_atividade": 0, "prazo_final": "2025-12-15" }
+                { "id": "SUB007", "descricao": "Assentamento de Pisos", "peso_local": 17.5, "progresso_atividade": 0, "prazo_final": "2025-12-01" },
+                { "id": "SUB008", "descricao": "Pintura Interna", "peso_local": 10.5, "progresso_atividade": 0, "prazo_final": "2025-12-10" },
+                { "id": "SUB009", "descricao": "Instalação de Louças e Metais", "peso_local": 7, "progresso_atividade": 0, "prazo_final": "2025-12-15" }
             ]
         }
     ]
@@ -110,7 +110,30 @@ function calcularProgressoGlobal(cronograma) {
     return parseFloat(progressoGlobal.toFixed(2));
 }
 
-// FUNÇÃO ATUALIZADA: Permite decimais nos pesos locais
+// NOVA FUNÇÃO: Valida se a soma dos pesos locais não excede o peso global da principal
+function validarPesoLocalVsPesoGlobal(atividadePrincipalId, novoPesoLocal, subAtividadeId = null) {
+    const atividadePrincipal = dadosObra.cronograma.find(a => a.id === atividadePrincipalId);
+    if (!atividadePrincipal || !atividadePrincipal.sub_atividades) return true;
+
+    const pesoGlobalPrincipal = parseFloat(atividadePrincipal.peso_global) || 0;
+    
+    let somaAtual = 0;
+    atividadePrincipal.sub_atividades.forEach(sub => {
+        if (subAtividadeId && sub.id === subAtividadeId) return;
+        somaAtual += parseFloat(sub.peso_local) || 0;
+    });
+
+    const somaTotal = somaAtual + novoPesoLocal;
+    
+    if (somaTotal > pesoGlobalPrincipal) {
+        alert(`❌ Erro: A soma dos pesos locais das sub-atividades (${somaTotal.toFixed(2)}%) não pode exceder o peso global da atividade principal (${pesoGlobalPrincipal}%).\n\nPeso global da atividade "${atividadePrincipal.descricao}": ${pesoGlobalPrincipal}%\nSoma atual das outras sub-atividades: ${somaAtual.toFixed(2)}%\nPeso que você está tentando adicionar: ${novoPesoLocal.toFixed(2)}%\nTotal resultante: ${somaTotal.toFixed(2)}%\n\nPor favor, ajuste os valores ou aumente o peso global da atividade principal.`);
+        return false;
+    }
+    
+    return true;
+}
+
+// FUNÇÃO ATUALIZADA: Valida ambas as regras (100% local + peso global)
 function validarPesoLocalSubAtividades(atividadePrincipalId, novoPesoLocal, subAtividadeId = null) {
     const atividadePrincipal = dadosObra.cronograma.find(a => a.id === atividadePrincipalId);
     if (!atividadePrincipal || !atividadePrincipal.sub_atividades) return true;
@@ -123,11 +146,32 @@ function validarPesoLocalSubAtividades(atividadePrincipalId, novoPesoLocal, subA
 
     const somaTotal = somaAtual + novoPesoLocal;
     
+    // Regra 1: Não pode exceder 100% local
     if (somaTotal > 100) {
         alert(`❌ Erro: A soma dos pesos locais das sub-atividades (${somaTotal.toFixed(2)}%) não pode exceder 100%.\n\nPeso atual das outras sub-atividades: ${somaAtual.toFixed(2)}%\nPeso que você está tentando adicionar: ${novoPesoLocal.toFixed(2)}%\n\nPor favor, ajuste os valores.`);
         return false;
     }
     
+    // Regra 2: Não pode exceder o peso global da principal
+    return validarPesoLocalVsPesoGlobal(atividadePrincipalId, novoPesoLocal, subAtividadeId);
+}
+
+// NOVA FUNÇÃO: Valida se mudança no peso global não quebra as sub-atividades
+function validarMudancaPesoGlobal(atividadeId, novoPesoGlobal) {
+    const atividade = dadosObra.cronograma.find(a => a.id === atividadeId);
+    if (!atividade || !atividade.sub_atividades || atividade.sub_atividades.length === 0) {
+        return true;
+    }
+
+    const somaPesosLocais = atividade.sub_atividades.reduce((soma, sub) => {
+        return soma + (parseFloat(sub.peso_local) || 0);
+    }, 0);
+
+    if (somaPesosLocais > novoPesoGlobal) {
+        alert(`❌ Erro: Não é possível reduzir o peso global para ${novoPesoGlobal}% porque a soma dos pesos locais das sub-atividades é ${somaPesosLocais.toFixed(2)}%.\n\nVocê precisa primeiro reduzir os pesos das sub-atividades ou remover algumas delas.`);
+        return false;
+    }
+
     return true;
 }
 
@@ -226,7 +270,7 @@ function sumCurrentGlobalWeights() {
 function updatePesoGlobalDisplay(total, elementId = 'total-peso-global-display') {
     const displayElement = document.getElementById(elementId);
     if (displayElement) {
-        displayElement.textContent = total.toFixed(1); // Mostra 1 casa decimal
+        displayElement.textContent = total.toFixed(1);
         if (total > 100) {
             displayElement.style.color = 'red';
             displayElement.style.fontWeight = 'bold';
@@ -245,6 +289,7 @@ function handleNewPesoGlobalInput() {
     updatePesoGlobalDisplay(potentialTotal);
 }
 
+// FUNÇÃO ATUALIZADA: Inclui validação de peso global
 function updateProgressBarVisual(inputElement) {
     const progressValue = parseFloat(inputElement.value) || 0;
     const progressBarFill = inputElement.nextElementSibling?.querySelector('.progress-bar-fill');
@@ -253,6 +298,20 @@ function updateProgressBarVisual(inputElement) {
         progressBarFill.style.width = `${progressValue}%`;
     }
 
+    // Validação especial para peso global
+    if (inputElement.dataset.type === 'peso-global') {
+        const atividadeId = inputElement.dataset.id;
+        
+        if (!validarMudancaPesoGlobal(atividadeId, progressValue)) {
+            const atividade = dadosObra.cronograma.find(a => a.id === atividadeId);
+            if (atividade) {
+                inputElement.value = atividade.peso_global || 0;
+            }
+            return;
+        }
+    }
+
+    // Validação para peso local de sub-atividades
     if (inputElement.dataset.type === 'peso-local') {
         const atividadePrincipalId = inputElement.dataset.id;
         const subAtividadeId = inputElement.dataset.subId;
@@ -309,7 +368,7 @@ function updateProgressBarVisual(inputElement) {
                 const principalProgressBar = document.querySelector(`input[data-id="${activityId}"][data-type="progresso-principal"]`)?.nextElementSibling?.querySelector('.progress-bar-fill');
 
                 if (principalProgressInput) {
-                    principalProgressInput.value = effectivePrincipalProgress.toFixed(1); // 1 casa decimal
+                    principalProgressInput.value = effectivePrincipalProgress.toFixed(1);
                 }
                 if (principalProgressBar) {
                     principalProgressBar.style.width = `${effectivePrincipalProgress}%`;
@@ -348,7 +407,7 @@ function updateProgressBarVisual(inputElement) {
     const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
     const progressoGlobalElement = document.getElementById('admin-progresso-global');
     if (progressoGlobalElement) {
-        progressoGlobalElement.textContent = `${progressoGlobal.toFixed(1)}%`; // 1 casa decimal
+        progressoGlobalElement.textContent = `${progressoGlobal.toFixed(1)}%`;
     }
     
     console.log('Progresso global atualizado:', progressoGlobal.toFixed(2) + '%');
@@ -423,7 +482,7 @@ function carregarAdminView() {
                 subRow.innerHTML = `
                     <td data-label="Atividade / Sub-Atividade"><span class="sub-indent-char">- </span><input type="text" value="${sub.descricao}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="descricao-sub" class="activity-description-input"></td>
                     <td data-label="Tipo">Sub</td>
-                    <td data-label="Peso (%)"><input type="number" min="0" max="100" step="0.01" value="${sub.peso_local}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="peso-local" class="activity-progress-input"></td>
+                    <td data-label="Peso (%)"><input type="number" min="0" max="${atividadePrincipal.peso_global}" step="0.01" value="${sub.peso_local}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="peso-local" class="activity-progress-input"></td>
                     <td data-label="Progresso (%)">
                         <div class="progress-cell-content">
                             <input type="number" min="0" max="100" step="0.1" value="${sub.progresso_atividade}" class="activity-progress-input" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="progresso-sub">
@@ -495,6 +554,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     carregarAdminView();
 });
 
+// VALIDAÇÃO ATUALIZADA: Inclui validação de peso global vs sub-atividades
 document.getElementById('cronograma-form').addEventListener('submit', function(event) {
     event.preventDefault();
     console.log('🔄 Salvando cronograma...');
@@ -514,8 +574,16 @@ document.getElementById('cronograma-form').addEventListener('submit', function(e
             atividade.sub_atividades.forEach(sub => {
                 somaPesoLocal += parseFloat(sub.peso_local) || 0;
             });
+            
+            // Validação 1: Não pode exceder 100%
             if (somaPesoLocal > 100) {
                 alert(`❌ Erro na atividade "${atividade.descricao}": A soma dos pesos locais das sub-atividades (${somaPesoLocal.toFixed(2)}%) não pode exceder 100%.`);
+                validacaoSubAtividades = false;
+            }
+            
+            // Validação 2: Não pode exceder o peso global da principal
+            if (somaPesoLocal > atividade.peso_global) {
+                alert(`❌ Erro na atividade "${atividade.descricao}": A soma dos pesos locais das sub-atividades (${somaPesoLocal.toFixed(2)}%) não pode exceder o peso global da atividade principal (${atividade.peso_global}%).`);
                 validacaoSubAtividades = false;
             }
         }
