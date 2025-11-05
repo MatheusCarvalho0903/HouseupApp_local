@@ -1,4 +1,5 @@
-console.log('🚀 Iniciando cronograma...');
+
+console.log('🚀 Iniciando cronograma com Drag & Drop...');
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = {
@@ -41,6 +42,9 @@ let dadosObra = {
     },
     info_projeto: {}
 };
+
+// Variáveis para controle do drag & drop
+let sortableInstances = [];
 
 // --- CRONOGRAMAS PADRÃO ---
 const CRONOGRAMAS_PADRAO = {
@@ -101,15 +105,6 @@ async function carregarDadosProjeto() {
             
             // LOG DETALHADO DO CRONOGRAMA
             console.log(`📊 Cronograma carregado: ${dadosObra.cronograma.length} atividades`);
-            dadosObra.cronograma.forEach((atividade, index) => {
-                console.log(`  ${index + 1}. ${atividade.descricao}`);
-                if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
-                    console.log(`     📝 ${atividade.sub_atividades.length} sub-atividades:`);
-                    atividade.sub_atividades.forEach((sub, subIndex) => {
-                        console.log(`       ${subIndex + 1}. ${sub.descricao}`);
-                    });
-                }
-            });
             
         } else {
             console.log('⚠️ Projeto não encontrado, criando estrutura básica...');
@@ -164,17 +159,15 @@ async function atualizarInfoObra() {
     }
 }
 
-// --- FUNÇÕES UTILITÁRIAS MELHORADAS ---
+// --- FUNÇÕES UTILITÁRIAS ---
 function getAutomatedStatus(progressValue) {
     if (progressValue === 0) return "Não Iniciada";
     if (progressValue === 100) return "Concluída";
     return "Em Andamento";
 }
 
-// FUNÇÃO PARA CALCULAR PROGRESSO DA ATIVIDADE PRINCIPAL A PARTIR DAS SUB-ATIVIDADES
 function calcularProgressoPrincipalPorSubAtividades(atividade) {
     if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
-        // Se não tem sub-atividades, usa o progresso manual
         return parseFloat(atividade.progresso_atividade) || 0;
     }
     
@@ -195,7 +188,6 @@ function calcularProgressoPrincipalPorSubAtividades(atividade) {
     return parseFloat(progressoCalculado.toFixed(2));
 }
 
-// FUNÇÃO PARA CALCULAR PROGRESSO GLOBAL DO PROJETO
 function calcularProgressoGlobal() {
     if (!dadosObra.cronograma || dadosObra.cronograma.length === 0) return 0;
     
@@ -216,7 +208,6 @@ function calcularProgressoGlobal() {
     return parseFloat(progressoGlobal.toFixed(2));
 }
 
-// FUNÇÃO PARA VALIDAR PROGRESSO (0-100%)
 function validarProgresso(valor) {
     const num = parseFloat(valor);
     if (isNaN(num)) return 0;
@@ -225,7 +216,6 @@ function validarProgresso(valor) {
     return parseFloat(num.toFixed(2));
 }
 
-// FUNÇÃO PARA VALIDAR PESO GLOBAL TOTAL
 function validarPesoGlobalTotal() {
     let pesoTotal = 0;
     dadosObra.cronograma.forEach(atividade => {
@@ -238,7 +228,6 @@ function validarPesoGlobalTotal() {
     };
 }
 
-// FUNÇÃO PARA VALIDAR PESO LOCAL DAS SUB-ATIVIDADES
 function validarPesoLocalSubAtividades(atividade) {
     if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
         return { total: 0, excede: false };
@@ -338,7 +327,99 @@ function atualizarDisplayPesoGlobal() {
     }
 }
 
-// --- CARREGAR CRONOGRAMA (VERSÃO MELHORADA) ---
+// --- DESTRUIR INSTÂNCIAS SORTABLE ANTERIORES ---
+function destruirSortableInstances() {
+    sortableInstances.forEach(instance => {
+        if (instance && typeof instance.destroy === 'function') {
+            instance.destroy();
+        }
+    });
+    sortableInstances = [];
+}
+
+// --- CONFIGURAR DRAG & DROP ---
+function configurarDragAndDrop() {
+    console.log('🎯 Configurando Drag & Drop...');
+    
+    // Destruir instâncias anteriores
+    destruirSortableInstances();
+    
+    const cronogramaBody = document.getElementById('cronograma-body');
+    if (!cronogramaBody) return;
+    
+    // Configurar drag & drop para atividades principais
+    const sortableMain = Sortable.create(cronogramaBody, {
+        group: 'cronograma',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        handle: '.drag-handle-main',
+        filter: '.sub-activity-row',
+        onEnd: function(evt) {
+            console.log('🔄 Reordenando atividades principais...');
+            
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            
+            // Reordenar no array de dados
+            const movedItem = dadosObra.cronograma.splice(oldIndex, 1)[0];
+            dadosObra.cronograma.splice(newIndex, 0, movedItem);
+            
+            // Salvar e recarregar
+            salvarDados().then(() => {
+                console.log('✅ Ordem das atividades principais salva');
+                carregarAdminView();
+            });
+        }
+    });
+    
+    sortableInstances.push(sortableMain);
+    
+    // Configurar drag & drop para sub-atividades de cada atividade principal
+    dadosObra.cronograma.forEach((atividade, atividadeIndex) => {
+        if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
+            const subRows = document.querySelectorAll(`[data-parent-id="${atividade.id}"]`);
+            
+            if (subRows.length > 0) {
+                // Criar um container virtual para as sub-atividades
+                const subContainer = document.createElement('div');
+                subRows.forEach(row => subContainer.appendChild(row.cloneNode(true)));
+                
+                const sortableSub = Sortable.create(subContainer, {
+                    group: `sub-${atividade.id}`,
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    handle: '.drag-handle-sub',
+                    onEnd: function(evt) {
+                        console.log(`🔄 Reordenando sub-atividades da atividade ${atividadeIndex}...`);
+                        
+                        const oldIndex = evt.oldIndex;
+                        const newIndex = evt.newIndex;
+                        
+                        // Reordenar no array de sub-atividades
+                        const movedSubItem = atividade.sub_atividades.splice(oldIndex, 1)[0];
+                        atividade.sub_atividades.splice(newIndex, 0, movedSubItem);
+                        
+                        // Salvar e recarregar
+                        salvarDados().then(() => {
+                            console.log('✅ Ordem das sub-atividades salva');
+                            carregarAdminView();
+                        });
+                    }
+                });
+                
+                sortableInstances.push(sortableSub);
+            }
+        }
+    });
+    
+    console.log(`✅ Drag & Drop configurado para ${sortableInstances.length} containers`);
+}
+
+// --- CARREGAR CRONOGRAMA COM DRAG & DROP ---
 function carregarCronograma() {
     const cronogramaBody = document.getElementById('cronograma-body');
     if (!cronogramaBody) {
@@ -364,13 +445,19 @@ function carregarCronograma() {
         
         // LINHA DA ATIVIDADE PRINCIPAL
         const row = cronogramaBody.insertRow();
+        row.className = 'main-activity-row';
         row.innerHTML = `
             <td data-label="Atividade">
-                <strong>${atividade.descricao}</strong>
-                ${temSubAtividades ? 
-                    `<span style="color: #007bff; margin-left: 10px;">(${atividade.sub_atividades.length} sub-atividades)</span>` : 
-                    ''
-                }
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="drag-handle-main" style="cursor: grab; color: #007bff; font-size: 18px;" title="Arrastar para reordenar">⋮⋮</span>
+                    <div>
+                        <strong>${atividade.descricao}</strong>
+                        ${temSubAtividades ? 
+                            `<span style="color: #007bff; margin-left: 10px;">(${atividade.sub_atividades.length} sub-atividades)</span>` : 
+                            ''
+                        }
+                    </div>
+                </div>
             </td>
             <td data-label="Tipo"><span style="background: #007bff; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">Principal</span></td>
             <td data-label="Peso (%)">
@@ -408,10 +495,15 @@ function carregarCronograma() {
         if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
             atividade.sub_atividades.forEach((subAtividade, subIndex) => {
                 const subRow = cronogramaBody.insertRow();
+                subRow.className = 'sub-activity-row';
+                subRow.setAttribute('data-parent-id', atividade.id);
                 subRow.style.backgroundColor = '#f8f9fa';
                 subRow.innerHTML = `
                     <td data-label="Atividade" style="padding-left: 30px;">
-                        ↳ ${subAtividade.descricao}
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="drag-handle-sub" style="cursor: grab; color: #6c757d; font-size: 14px;" title="Arrastar para reordenar">⋮⋮</span>
+                            <span>↳ ${subAtividade.descricao}</span>
+                        </div>
                     </td>
                     <td data-label="Tipo"><span style="background: #6c757d; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">Sub</span></td>
                     <td data-label="Peso (%)">
@@ -445,7 +537,57 @@ function carregarCronograma() {
         }
     });
     
+    // Configurar drag & drop após carregar o cronograma
+    setTimeout(() => {
+        configurarDragAndDrop();
+    }, 100);
+    
     console.log(`✅ Cronograma renderizado: ${dadosObra.cronograma.length} atividades principais`);
+}
+
+// --- ADICIONAR CSS PARA DRAG & DROP ---
+function adicionarEstilosDragDrop() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #e3f2fd !important;
+        }
+        
+        .sortable-chosen {
+            background: #bbdefb !important;
+        }
+        
+        .sortable-drag {
+            background: #2196f3 !important;
+            color: white !important;
+        }
+        
+        .drag-handle-main:hover,
+        .drag-handle-sub:hover {
+            color: #0056b3 !important;
+            transform: scale(1.1);
+        }
+        
+        .drag-handle-main:active,
+        .drag-handle-sub:active {
+            cursor: grabbing !important;
+        }
+        
+        .main-activity-row {
+            transition: all 0.2s ease;
+        }
+        
+        .sub-activity-row {
+            transition: all 0.2s ease;
+        }
+        
+        .main-activity-row:hover,
+        .sub-activity-row:hover {
+            background: #f0f8ff !important;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // --- ADICIONAR SEÇÃO DE CRONOGRAMAS PADRÃO ---
@@ -529,18 +671,16 @@ async function aplicarCronogramaPadrao(tipoPadrao) {
     }
 }
 
-// --- FUNÇÕES DE ATUALIZAÇÃO MELHORADAS ---
+// --- FUNÇÕES DE ATUALIZAÇÃO (mantidas iguais) ---
 async function atualizarProgressoAtividade(index, novoProgresso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    // Validar progresso
     const progressoValidado = validarProgresso(novoProgresso);
     
-    // Se tem sub-atividades, não permite alteração manual
     if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
         alert('⚠️ Esta atividade possui sub-atividades. O progresso é calculado automaticamente.');
-        carregarAdminView(); // Recarregar para reverter a mudança
+        carregarAdminView();
         return;
     }
     
@@ -563,10 +703,9 @@ async function atualizarPesoAtividade(index, novoPeso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    const pesoValidado = validarProgresso(novoPeso); // Reutiliza a validação 0-100
+    const pesoValidado = validarProgresso(novoPeso);
     atividade.peso_global = pesoValidado;
     
-    // Verificar se o peso global total excede 100%
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total (${validacao.total}%) excede 100%!\n\nAjuste os pesos das atividades.`);
@@ -576,7 +715,6 @@ async function atualizarPesoAtividade(index, novoPeso) {
     carregarAdminView();
 }
 
-// --- FUNÇÕES PARA SUB-ATIVIDADES MELHORADAS ---
 async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProgresso) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
@@ -586,7 +724,6 @@ async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProg
     atividade.sub_atividades[subIndex].progresso_atividade = progressoValidado;
     atividade.sub_atividades[subIndex].status = getAutomatedStatus(progressoValidado);
     
-    // Recalcular progresso da atividade principal
     const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
     atividade.progresso_atividade = novoProgressoPrincipal;
     atividade.status = getAutomatedStatus(novoProgressoPrincipal);
@@ -610,7 +747,6 @@ async function atualizarPesoSubAtividade(atividadeIndex, subIndex, novoPeso) {
     const pesoValidado = validarProgresso(novoPeso);
     atividade.sub_atividades[subIndex].peso_local = pesoValidado;
     
-    // Verificar se o peso das sub-atividades excede o peso da principal
     const validacao = validarPesoLocalSubAtividades(atividade);
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!\n\nAjuste os pesos das sub-atividades.`);
@@ -628,14 +764,11 @@ async function removerSubAtividade(atividadeIndex, subIndex) {
     
     atividade.sub_atividades.splice(subIndex, 1);
     
-    // Se não há mais sub-atividades, remover o array
     if (atividade.sub_atividades.length === 0) {
         delete atividade.sub_atividades;
-        // Resetar progresso da principal para 0
         atividade.progresso_atividade = 0;
         atividade.status = "Não Iniciada";
     } else {
-        // Recalcular progresso da principal
         const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
         atividade.progresso_atividade = novoProgressoPrincipal;
         atividade.status = getAutomatedStatus(novoProgressoPrincipal);
@@ -651,7 +784,7 @@ async function removerSubAtividade(atividadeIndex, subIndex) {
     }
 }
 
-// --- FUNÇÕES DE AÇÃO ---
+// --- FUNÇÕES DE AÇÃO (mantidas iguais) ---
 function adicionarAtividadeManual() {
     const descricao = prompt('📝 Descrição da atividade:');
     if (!descricao) return;
@@ -674,7 +807,6 @@ function adicionarAtividadeManual() {
     
     dadosObra.cronograma.push(novaAtividade);
     
-    // Verificar peso global total
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
@@ -713,7 +845,6 @@ async function adicionarAtividadePrincipal() {
 
     dadosObra.cronograma.push(novaAtividade);
     
-    // Verificar peso global total
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
@@ -723,7 +854,6 @@ async function adicionarAtividadePrincipal() {
         await salvarDados();
         carregarAdminView();
         
-        // Limpar formulário
         document.getElementById('nova-atividade-descricao').value = '';
         document.getElementById('nova-atividade-peso-global').value = '';
         document.getElementById('nova-atividade-prazo').value = '';
@@ -736,7 +866,6 @@ async function adicionarAtividadePrincipal() {
     }
 }
 
-// --- ADICIONAR SUB-ATIVIDADE MELHORADA ---
 async function adicionarSubAtividade() {
     console.log('➕ Tentando adicionar sub-atividade...');
     
@@ -745,29 +874,21 @@ async function adicionarSubAtividade() {
     const pesoLocal = parseFloat(document.getElementById('nova-sub-atividade-peso-local')?.value);
     const prazo = document.getElementById('nova-sub-atividade-prazo')?.value;
 
-    console.log('Dados do formulário:', { parentId, descricao, pesoLocal, prazo });
-
     if (!parentId || !descricao || isNaN(pesoLocal) || pesoLocal <= 0) {
         alert('❌ Por favor, preencha todos os campos da sub-atividade.');
-        console.log('❌ Validação falhou');
         return;
     }
 
     const atividadePrincipal = dadosObra.cronograma.find(a => a.id === parentId);
     if (!atividadePrincipal) {
         alert('❌ Atividade principal não encontrada.');
-        console.log('❌ Atividade principal não encontrada:', parentId);
         return;
     }
 
     const pesoValidado = validarProgresso(pesoLocal);
 
-    console.log('✅ Atividade principal encontrada:', atividadePrincipal.descricao);
-
-    // Garantir que existe o array de sub-atividades
     if (!atividadePrincipal.sub_atividades) {
         atividadePrincipal.sub_atividades = [];
-        console.log('📝 Array de sub-atividades criado');
     }
 
     const novaSubAtividade = {
@@ -779,30 +900,23 @@ async function adicionarSubAtividade() {
         prazo_final: prazo || "2025-12-31"
     };
 
-    console.log('📝 Nova sub-atividade criada:', novaSubAtividade);
-
     atividadePrincipal.sub_atividades.push(novaSubAtividade);
     
-    // Verificar se o peso das sub-atividades excede o da principal
     const validacao = validarPesoLocalSubAtividades(atividadePrincipal);
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!`);
     }
     
-    console.log(`✅ Sub-atividade adicionada. Total: ${atividadePrincipal.sub_atividades.length}`);
-    
     try {
         await salvarDados();
         carregarAdminView();
         
-        // Limpar formulário
         document.getElementById('parent-activity-select').value = '';
         document.getElementById('nova-sub-atividade-descricao').value = '';
         document.getElementById('nova-sub-atividade-peso-local').value = '';
         document.getElementById('nova-sub-atividade-prazo').value = '';
         
         alert('✅ Sub-atividade adicionada com sucesso!');
-        console.log('✅ Sub-atividade salva e interface atualizada');
         
     } catch (error) {
         console.error('❌ Erro ao adicionar sub-atividade:', error);
@@ -866,7 +980,10 @@ function carregarAdminView() {
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Inicializando aplicação...');
+    console.log('🚀 Inicializando aplicação com Drag & Drop...');
+    
+    // Adicionar estilos CSS para drag & drop
+    adicionarEstilosDragDrop();
     
     try {
         await carregarDadosProjeto();
@@ -923,4 +1040,4 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
     }
 });
 
-console.log('✅ Script carregado completamente');
+console.log('✅ Script com Drag & Drop carregado completamente');
