@@ -13,6 +13,52 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const dadosObraRef = db.collection('dados').doc('houseupData');
 
+// --- DETECÇÃO DO PROJETO ATUAL ---
+function obterProjetoAtual() {
+    // Tenta pegar da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const projetoUrl = urlParams.get('projeto');
+    
+    // Tenta pegar do localStorage
+    const projetoStorage = localStorage.getItem('projetoAtual');
+    
+    // Retorna o projeto da URL ou do storage, ou um padrão
+    return projetoUrl || projetoStorage || 'angela-marco';
+}
+
+// --- CONFIGURAÇÃO DO PROJETO ---
+const PROJETO_ATUAL = obterProjetoAtual();
+console.log('Projeto atual:', PROJETO_ATUAL);
+
+// Atualizar referência do Firebase para o projeto específico
+const dadosObraRef = db.collection('projetos').doc(PROJETO_ATUAL);
+
+// --- ATUALIZAR INFO DA OBRA NO HEADER ---
+async function atualizarInfoObra() {
+    try {
+        const doc = await dadosObraRef.get();
+        if (doc.exists) {
+            const projeto = doc.data();
+            const info = projeto.info_projeto;
+            
+            document.getElementById('admin-nome-obra').textContent = info.nome_obra;
+            document.getElementById('admin-codigo-obra').textContent = info.codigo_obra;
+            document.getElementById('projeto-atual').textContent = info.nome_obra;
+            
+            // Atualizar link do cliente (você pode personalizar isso)
+            const clientLink = document.getElementById('client-link');
+            clientLink.href = `https://codepen.io/OneAIAdapta/pen/MWjKLxP?projeto=${PROJETO_ATUAL}`;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar info da obra:', error);
+    }
+}
+
+// Chame esta função no início do DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
+    await atualizarInfoObra();
+    // ... resto do seu código existente
+});
 // Dados iniciais
 const initialDadosObra = {
     "nome_obra": "Casa do Matheus - Projeto Veraneio",

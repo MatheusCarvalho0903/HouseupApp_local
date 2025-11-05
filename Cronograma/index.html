@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseUp - Cronograma da Obra</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- FIREBASE SDKS -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Unificado -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="../index.html" style="color: inherit; text-decoration: none;">
+                        <i class="fas fa-home"></i>
+                        <h1>HouseUp</h1>
+                    </a>
+                </div>
+                <div class="breadcrumb">
+                    <a href="../index.html">Projetos</a> > 
+                    <span id="projeto-atual">Cronograma</span>
+                </div>
+                <div class="user-info">
+                    <span>Olá, <strong>Matheus</strong></span>
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Info da Obra -->
+        <div class="obra-info">
+            <div class="obra-header">
+                <div class="obra-details">
+                    <h2 id="admin-nome-obra">Carregando...</h2>
+                    <p><strong>Código:</strong> <span id="admin-codigo-obra">-</span></p>
+                    <p class="current-global-progress">
+                        <strong>Progresso Global:</strong> 
+                        <span id="admin-progresso-global">0%</span>
+                    </p>
+                </div>
+                <div class="obra-actions">
+                    <a href="#" id="client-link"  class="btn btn-outline">
+                        <i class="fas fa-external-link-alt"></i> Ver App do Cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestão do Cronograma -->
+        <section class="section-card">
+            <h2><i class="fas fa-calendar-alt"></i> Gestão do Cronograma</h2>
+            <form id="cronograma-form">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Atividade / Sub-Atividade</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Peso (%)</th>
+                                <th scope="col">Progresso (%)</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Prazo Final</th>
+                                <th scope="col">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cronograma-body">
+                            <!-- Linhas serão carregadas pelo JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Cronograma
+                    </button>
+                    <button type="button" onclick="limparCronograma()" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Limpar Cronograma
+                    </button>
+                </div>
+            </form>
+
+            <hr>
+
+            <h3><i class="fas fa-plus-circle"></i> Adicionar Nova Atividade / Sub-Atividade</h3>
+            <div class="add-forms">
+                <div class="add-form-group">
+                    <h4>Adicionar Atividade Principal</h4>
+                    <p>Soma dos Pesos Globais Atuais: <span id="total-peso-global-display">0</span>%</p>
+                    <input type="text" id="nova-atividade-descricao" placeholder="Descrição da Atividade Principal">
+                    <input type="number" id="nova-atividade-peso-global" min="0" max="100" step="0.1" placeholder="Peso Global (%)">
+                    <input type="date" id="nova-atividade-prazo">
+                    <button type="button" onclick="adicionarAtividadePrincipal()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Atividade
+                    </button>
+                </div>
+                
+                <div class="add-form-group">
+                    <h4>Adicionar Sub-Atividade</h4>
+                    <select id="parent-activity-select">
+                        <option value="">Selecione a Atividade Principal</option>
+                    </select>
+                    <input type="text" id="nova-sub-atividade-descricao" placeholder="Descrição da Sub-Atividade">
+                    <input type="number" id="nova-sub-atividade-peso-local" min="0" max="100" step="0.01" placeholder="Peso Local (%)">
+                    <input type="date" id="nova-sub-atividade-prazo">
+                    <button type="button" onclick="adicionarSubAtividade()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Sub-Atividade
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lançamento de Custos -->
+        <section class="section-card">
+            <h2><i class="fas fa-dollar-sign"></i> Lançamento de Custos</h2>
+            <div class="custos-summary">
+                <div class="custo-item">
+                    <span class="custo-label">Total Material:</span>
+                    <span class="custo-value" id="total-material-admin">R$ 0,00</span>
+                </div>
+                <div class="custo-item">
+                    <span class="custo-label">Total Mão de Obra:</span>
+                    <span class="custo-value" id="total-mao-de-obra-admin">R$ 0,00</span>
+                </div>
+            </div>
+            
+            <form id="custos-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="novo-material">Novo Gasto Material (R$):</label>
+                        <input type="number" id="novo-material" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="nova-mao-de-obra">Novo Gasto Mão de Obra (R$):</label>
+                        <input type="number" id="nova-mao-de-obra" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Lançar Custos
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,5 +1,122 @@
 /* Houseup - Identidade Visual da Logo */
+/* Adicione no início do seu style.css existente */
 
+/* Info da Obra */
+.obra-info {
+    background: white;
+    margin: 1rem 2rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.obra-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.obra-details h2 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.obra-details p {
+    margin-bottom: 0.25rem;
+    color: #666;
+}
+
+.current-global-progress {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #28a745 !important;
+    margin-top: 0.5rem !important;
+}
+
+.obra-actions {
+    flex-shrink: 0;
+}
+
+/* Melhorias na tabela */
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+/* Ações do formulário */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Resumo de custos */
+.custos-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.custo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+.custo-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.custo-value {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .obra-info {
+        margin: 1rem;
+    }
+    
+    .obra-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .custos-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Breadcrumb styles */
+.breadcrumb {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.breadcrumb a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
 /* Cores Base da LOGO */
 :root {
     --houseup-dark-blue: #1B355B;   /* Azul Escuro da logo */
