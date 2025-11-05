@@ -1,6 +1,4 @@
-console.log('🚀 Iniciando sistema de cronograma padrão');
-
-// CONFIGURAÇÃO FIREBASE
+// --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDq3mr-ryX_q8GAEyfTsQP2mzjpP9wOugE",
     authDomain: "houseup-app.firebaseapp.com",
@@ -10,19 +8,40 @@ const firebaseConfig = {
     appId: "1:401114152723:web:f96eaf0a718342c0cf64e6"
 };
 
+// Inicializar Firebase se ainda não foi
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
 
-// DADOS GLOBAIS
-let dadosObra = {};
-const PROJETO_ATUAL = 'angela-marco';
+// --- DETECÇÃO DO PROJETO ATUAL ---
+function obterProjetoAtual() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projetoUrl = urlParams.get('projeto');
+    const projetoStorage = localStorage.getItem('projetoAtual');
+    return projetoUrl || projetoStorage || 'angela-marco';
+}
 
-// CRONOGRAMAS PADRÃO
+const PROJETO_ATUAL = obterProjetoAtual();
+console.log('🏗️ Projeto atual:', PROJETO_ATUAL);
+
+// Atualizar referência do Firebase para o projeto específico
+const dadosObraRef = db.collection('projetos').doc(PROJETO_ATUAL);
+
+// --- VARIÁVEIS GLOBAIS ---
+let dadosObra = {
+    cronograma: [],
+    gastos: {
+        material: { total_realizado: 0 },
+        mao_de_obra: { total_realizado: 0 }
+    },
+    info_projeto: {}
+};
+
+// --- CRONOGRAMAS PADRÃO ---
 const CRONOGRAMAS_PADRAO = {
     'residencial-completo': {
-        nome: 'Residencial Completo (18 meses)',
+        nome: 'Residencial Completo (17 atividades)',
         atividades: [
             { descricao: 'Limpeza e terraplanagem', peso: 3, prazo: '2025-01-15' },
             { descricao: 'Fundação profunda', peso: 5, prazo: '2025-01-30' },
@@ -44,176 +63,371 @@ const CRONOGRAMAS_PADRAO = {
         ]
     },
     'reforma-simples': {
-        nome: 'Reforma Simples (6 meses)',
+        nome: 'Reforma Simples (7 atividades)',
         atividades: [
-            { descricao: 'Demolições', peso: 10, prazo: '2025-01-15' },
-            { descricao: 'Instalações elétricas', peso: 15, prazo: '2025-02-10' },
-            { descricao: 'Instalações hidráulicas', peso: 15, prazo: '2025-02-10' },
+            { descricao: 'Demolições', peso: 15, prazo: '2025-01-15' },
+            { descricao: 'Instalações elétricas', peso: 20, prazo: '2025-02-10' },
+            { descricao: 'Instalações hidráulicas', peso: 20, prazo: '2025-02-10' },
             { descricao: 'Revestimentos', peso: 25, prazo: '2025-03-20' },
-            { descricao: 'Pisos', peso: 20, prazo: '2025-04-15' },
+            { descricao: 'Pisos', peso: 15, prazo: '2025-04-15' },
             { descricao: 'Pintura', peso: 10, prazo: '2025-05-10' },
             { descricao: 'Acabamentos finais', peso: 5, prazo: '2025-05-30' }
-        ]
-    },
-    'estrutural-apenas': {
-        nome: 'Apenas Estrutural (8 meses)',
-        atividades: [
-            { descricao: 'Limpeza do terreno', peso: 5, prazo: '2025-01-10' },
-            { descricao: 'Fundação', peso: 25, prazo: '2025-02-28' },
-            { descricao: 'Pilares térreo', peso: 15, prazo: '2025-03-30' },
-            { descricao: 'Vigas térreo', peso: 10, prazo: '2025-04-15' },
-            { descricao: 'Laje térreo', peso: 15, prazo: '2025-05-10' },
-            { descricao: 'Pilares superior', peso: 10, prazo: '2025-06-05' },
-            { descricao: 'Vigas superior', peso: 8, prazo: '2025-06-25' },
-            { descricao: 'Laje superior', peso: 12, prazo: '2025-07-20' }
         ]
     }
 };
 
-// CARREGAR DADOS ATUAIS
-async function carregarDados() {
-    console.log('📂 Carregando dados...');
-    
+// --- ATUALIZAR INFO DA OBRA ---
+async function atualizarInfoObra() {
     try {
-        const doc = await db.collection('projetos').doc(PROJETO_ATUAL).get();
+        const doc = await dadosObraRef.get();
+        if (doc.exists) {
+            const projeto = doc.data();
+            const info = projeto.info_projeto;
+            
+            // Atualizar elementos se existirem
+            const elementos = {
+                'admin-nome-obra': info?.nome_obra,
+                'admin-codigo-obra': info?.codigo_obra,
+                'projeto-atual': info?.nome_obra
+            };
+            
+            Object.keys(elementos).forEach(id => {
+                const el = document.getElementById(id);
+                if (el && elementos[id]) {
+                    el.textContent = elementos[id];
+                }
+            });
+            
+            // Atualizar link do cliente se existir
+            const clientLink = document.getElementById('client-link');
+            if (clientLink) {
+                clientLink.href = `https://codepen.io/OneAIAdapta/pen/MWjKLxP?projeto=${PROJETO_ATUAL}`;
+            }
+            
+            console.log('✅ Info da obra atualizada:', info?.nome_obra);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar info da obra:', error);
+    }
+}
+
+// --- CARREGAR DADOS DO PROJETO ---
+async function carregarDadosProjeto() {
+    try {
+        console.log('📂 Carregando dados do projeto:', PROJETO_ATUAL);
         
+        const doc = await dadosObraRef.get();
         if (doc.exists) {
             dadosObra = doc.data();
-            console.log('✅ Dados carregados');
-        } else {
-            console.log('⚠️ Criando projeto básico');
-            dadosObra = {
-                info_projeto: {
-                    nome_obra: "Residência Ângela e Marco",
-                    codigo_obra: "HOUS-001-2024"
-                },
-                cronograma: [],
-                gastos: {
+            console.log('✅ Dados carregados:', dadosObra);
+            
+            // Garantir estrutura mínima
+            if (!dadosObra.cronograma) dadosObra.cronograma = [];
+            if (!dadosObra.gastos) {
+                dadosObra.gastos = {
                     material: { total_realizado: 0 },
                     mao_de_obra: { total_realizado: 0 }
+                };
+            }
+            
+            // Converter estrutura antiga de gastos se necessário
+            if (typeof dadosObra.gastos.material === 'number') {
+                dadosObra.gastos = {
+                    material: { total_realizado: dadosObra.gastos.material || 0 },
+                    mao_de_obra: { total_realizado: dadosObra.gastos.mao_de_obra || 0 }
+                };
+            }
+            
+            console.log(`📊 Cronograma carregado: ${dadosObra.cronograma.length} atividades`);
+            
+        } else {
+            console.log('⚠️ Projeto não encontrado, criando estrutura básica...');
+            dadosObra = {
+                cronograma: [],
+                gastos: {
+                    material: { total_realizado: 0, historico: [] },
+                    mao_de_obra: { total_realizado: 0, historico: [] }
+                },
+                info_projeto: {
+                    nome_obra: 'Projeto Não Encontrado',
+                    codigo_obra: 'N/A'
                 }
             };
         }
         
-        atualizarInterface();
+        return dadosObra;
         
     } catch (error) {
-        console.error('❌ Erro:', error);
-        alert('Erro ao carregar: ' + error.message);
+        console.error('❌ Erro ao carregar dados do projeto:', error);
+        dadosObra = {
+            cronograma: [],
+            gastos: {
+                material: { total_realizado: 0 },
+                mao_de_obra: { total_realizado: 0 }
+            }
+        };
+        return dadosObra;
     }
 }
 
-// ATUALIZAR INTERFACE
-function atualizarInterface() {
-    // Nome da obra
-    const nomeEl = document.getElementById('admin-nome-obra');
-    if (nomeEl) nomeEl.textContent = dadosObra.info_projeto?.nome_obra || 'Sem nome';
-    
-    // Código da obra
-    const codigoEl = document.getElementById('admin-codigo-obra');
-    if (codigoEl) codigoEl.textContent = dadosObra.info_projeto?.codigo_obra || 'Sem código';
-    
-    // Carregar cronograma
-    carregarCronograma();
-    
-    // Carregar seletor de padrões
-    carregarSeletorPadrao();
+// --- FUNÇÕES UTILITÁRIAS ---
+function getAutomatedStatus(progressValue) {
+    if (progressValue === 0) return "Não Iniciada";
+    if (progressValue === 100) return "Concluída";
+    return "Em Andamento";
 }
 
-// CARREGAR CRONOGRAMA
-function carregarCronograma() {
-    const tbody = document.getElementById('cronograma-body');
-    if (!tbody) return;
+function getEffectiveActivityProgress(atividade) {
+    if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
+        let progressoPonderado = 0;
+        let pesoTotalSubAtividades = 0;
+        
+        atividade.sub_atividades.forEach(sub => {
+            const pesoLocal = parseFloat(sub.peso_local) || 0;
+            const progressoSub = parseFloat(sub.progresso_atividade) || 0;
+            
+            progressoPonderado += (pesoLocal * progressoSub);
+            pesoTotalSubAtividades += pesoLocal;
+        });
+        
+        if (pesoTotalSubAtividades === 0) return 0;
+        
+        const progressoCalculado = progressoPonderado / pesoTotalSubAtividades;
+        return parseFloat(progressoCalculado.toFixed(2));
+    } else {
+        return parseFloat(atividade.progresso_atividade) || 0;
+    }
+}
+
+function calcularProgressoGlobal(cronograma = dadosObra.cronograma) {
+    if (!cronograma || cronograma.length === 0) return 0;
     
-    tbody.innerHTML = '';
+    let progressoGlobalPonderado = 0;
+    let pesoGlobalTotal = 0;
+
+    cronograma.forEach(atividadePrincipal => {
+        const pesoGlobal = parseFloat(atividadePrincipal.peso_global) || 0;
+        const progressoEfetivo = getEffectiveActivityProgress(atividadePrincipal);
+        
+        progressoGlobalPonderado += (pesoGlobal * progressoEfetivo);
+        pesoGlobalTotal += pesoGlobal;
+    });
+
+    const progressoGlobal = pesoGlobalTotal === 0 ? 0 : progressoGlobalPonderado / pesoGlobalTotal;
+    return parseFloat(progressoGlobal.toFixed(2));
+}
+
+function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function gerarNovoId(prefixo) {
+    return prefixo + Math.random().toString(36).substring(2, 9) + Date.now().toString().substring(9,13);
+}
+
+// --- SALVAR DADOS NO FIREBASE ---
+async function salvarDados() {
+    try {
+        console.log('💾 Salvando dados...');
+        
+        await dadosObraRef.update({
+            cronograma: dadosObra.cronograma,
+            gastos: dadosObra.gastos,
+            progresso_geral: calcularProgressoGlobal(),
+            ultima_atualizacao: new Date().toISOString()
+        });
+        
+        console.log('✅ Dados salvos com sucesso');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar dados:', error);
+        return false;
+    }
+}
+
+async function salvarDadosObra() {
+    try {
+        await salvarDados();
+        alert('✅ Dados salvos com sucesso!');
+        carregarAdminView();
+    } catch (error) {
+        console.error("Erro ao salvar dados no Firestore: ", error);
+        alert('❌ Erro ao salvar dados. Verifique o console do navegador (F12) para mais detalhes.');
+    }
+}
+
+// --- CARREGAR CUSTOS ---
+function carregarCustos() {
+    const totalMaterial = dadosObra.gastos?.material?.total_realizado || 0;
+    const totalMaoObra = dadosObra.gastos?.mao_de_obra?.total_realizado || 0;
     
-    const cronograma = dadosObra.cronograma || [];
+    const materialEl = document.getElementById('total-material-admin');
+    const maoObraEl = document.getElementById('total-mao-de-obra-admin');
     
-    if (cronograma.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 30px;">
-                    <h3>📋 Nenhuma atividade cadastrada</h3>
-                    <p>Selecione um cronograma padrão abaixo para começar!</p>
-                </td>
-            </tr>
-        `;
+    if (materialEl) materialEl.textContent = formatarMoeda(totalMaterial);
+    if (maoObraEl) maoObraEl.textContent = formatarMoeda(totalMaoObra);
+}
+
+// --- CARREGAR DROPDOWN DE ATIVIDADES ---
+function carregarDropdownAtividades() {
+    const parentActivitySelect = document.getElementById('parent-activity-select');
+    if (!parentActivitySelect) return;
+    
+    parentActivitySelect.innerHTML = '<option value="">Selecione a Atividade Principal</option>';
+
+    dadosObra.cronograma.forEach(atividade => {
+        const option = document.createElement('option');
+        option.value = atividade.id;
+        option.textContent = atividade.descricao;
+        parentActivitySelect.appendChild(option);
+    });
+}
+
+// --- CARREGAR INTERFACE ADMIN ---
+function carregarAdminView() {
+    // Atualizar progresso global
+    const progressoGlobal = calcularProgressoGlobal();
+    const progressoEl = document.getElementById('admin-progresso-global');
+    if (progressoEl) {
+        progressoEl.textContent = `${progressoGlobal.toFixed(1)}%`;
+    }
+
+    const cronogramaBody = document.getElementById('cronograma-body');
+    if (!cronogramaBody) {
+        console.error('❌ Elemento cronograma-body não encontrado');
         return;
     }
     
-    cronograma.forEach((atividade, index) => {
-        const row = tbody.insertRow();
+    cronogramaBody.innerHTML = '';
+
+    // Carregar dropdown de atividades principais
+    carregarDropdownAtividades();
+
+    // Adicionar seção de cronogramas padrão se não existir
+    adicionarSecaoCronogramasPadrao();
+
+    if (!dadosObra.cronograma || dadosObra.cronograma.length === 0) {
+        cronogramaBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">📋 Nenhuma atividade cadastrada. Use os cronogramas padrão acima para começar!</td></tr>';
+        carregarCustos();
+        return;
+    }
+
+    dadosObra.cronograma.forEach((atividadePrincipal, indexPrincipal) => {
+        let firstCellContent = '';
+        if (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) {
+            firstCellContent += `<span class="toggle-icon" onclick="toggleSubActivities('${atividadePrincipal.id}')">▶</span>`;
+        }
+        firstCellContent += `<input type="text" value="${atividadePrincipal.descricao}" data-id="${atividadePrincipal.id}" data-type="descricao-principal" class="activity-description-input">`;
+
+        const isPrincipalProgressDisabled = (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) ? 'disabled' : '';
+        const principalProgressClass = (atividadePrincipal.sub_atividades && atividadePrincipal.sub_atividades.length > 0) ? 'disabled-input' : '';
+        const principalEffectiveProgress = getEffectiveActivityProgress(atividadePrincipal).toFixed(1);
+
+        const row = cronogramaBody.insertRow();
         row.innerHTML = `
-            <td><strong>${atividade.descricao}</strong></td>
-            <td><span style="background: #007bff; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">Principal</span></td>
-            <td>${atividade.peso_global}%</td>
-            <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="range" min="0" max="100" value="${atividade.progresso_atividade || 0}" 
-                           style="flex: 1;" onchange="atualizarProgresso('${atividade.id}', this.value)">
-                    <span style="min-width: 40px; font-weight: bold;">${atividade.progresso_atividade || 0}%</span>
+            <td data-label="Atividade / Sub-Atividade">${firstCellContent}</td>
+            <td data-label="Tipo">Principal</td>
+            <td data-label="Peso (%)"><input type="number" min="0" max="100" step="0.1" value="${atividadePrincipal.peso_global}" data-id="${atividadePrincipal.id}" data-type="peso-global" class="activity-progress-input"></td>
+            <td data-label="Progresso (%)">
+                <div class="progress-cell-content">
+                    <input type="number" min="0" max="100" step="0.1" value="${principalEffectiveProgress}" ${isPrincipalProgressDisabled} class="${principalProgressClass} activity-progress-input" data-id="${atividadePrincipal.id}" data-type="progresso-principal">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${principalEffectiveProgress}%;"></div>
+                    </div>
                 </div>
             </td>
-            <td>
-                <select onchange="atualizarStatus('${atividade.id}', this.value)" style="width: 100%; padding: 5px;">
-                    <option value="Não Iniciada" ${atividade.status === 'Não Iniciada' ? 'selected' : ''}>Não Iniciada</option>
-                    <option value="Em Andamento" ${atividade.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
-                    <option value="Concluída" ${atividade.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
+            <td data-label="Status">
+                <select data-id="${atividadePrincipal.id}" data-type="status-principal">
+                    <option value="Não Iniciada" ${atividadePrincipal.status === 'Não Iniciada' ? 'selected' : ''}>Não Iniciada</option>
+                    <option value="Em Andamento" ${atividadePrincipal.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                    <option value="Aguardando material" ${atividadePrincipal.status === 'Aguardando material' ? 'selected' : ''}>Aguardando material</option>
+                    <option value="Concluída" ${atividadePrincipal.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
                 </select>
             </td>
-            <td>${atividade.prazo_final || 'N/A'}</td>
-            <td>
-                <button onclick="removerAtividade(${index})" 
-                        style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
-                    🗑️
-                </button>
+            <td data-label="Prazo Final">${new Date(atividadePrincipal.prazo_final || '2025-12-31').toLocaleDateString('pt-BR')}</td>
+            <td data-label="Ações">
+                <div class="action-buttons">
+                    <button type="button" onclick="removerAtividade('${atividadePrincipal.id}', 'principal')">🗑️</button>
+                </div>
             </td>
         `;
+
+        if (atividadePrincipal.sub_atividades) {
+            atividadePrincipal.sub_atividades.forEach((sub, indexSub) => {
+                const subRow = cronogramaBody.insertRow();
+                subRow.classList.add('sub-activity-row', `sub-of-${atividadePrincipal.id}`, 'sub-activity-hidden');
+                subRow.innerHTML = `
+                    <td data-label="Atividade / Sub-Atividade"><span class="sub-indent-char">- </span><input type="text" value="${sub.descricao}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="descricao-sub" class="activity-description-input"></td>
+                    <td data-label="Tipo">Sub</td>
+                    <td data-label="Peso (%)"><input type="number" min="0" max="${atividadePrincipal.peso_global}" step="0.01" value="${sub.peso_local}" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="peso-local" class="activity-progress-input"></td>
+                    <td data-label="Progresso (%)">
+                        <div class="progress-cell-content">
+                            <input type="number" min="0" max="100" step="0.1" value="${sub.progresso_atividade}" class="activity-progress-input" data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="progresso-sub">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: ${sub.progresso_atividade}%;"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Status">
+                        <select data-id="${atividadePrincipal.id}" data-sub-id="${sub.id}" data-type="status-sub">
+                            <option value="Não Iniciada" ${sub.status === 'Não Iniciada' ? 'selected' : ''}>Não Iniciada</option>
+                            <option value="Em Andamento" ${sub.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                            <option value="Aguardando material" ${sub.status === 'Aguardando material' ? 'selected' : ''}>Aguardando material</option>
+                            <option value="Concluída" ${sub.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
+                        </select>
+                    </td>
+                    <td data-label="Prazo Final">${new Date(sub.prazo_final).toLocaleDateString('pt-BR')}</td>
+                    <td data-label="Ações">
+                        <div class="action-buttons">
+                            <button type="button" onclick="removerAtividade('${atividadePrincipal.id}', 'sub', '${sub.id}')">🗑️</button>
+                        </div>
+                    </td>
+                `;
+            });
+        }
+    });
+
+    // Carregar custos
+    carregarCustos();
+
+    // Adicionar event listeners para inputs
+    document.querySelectorAll('.activity-progress-input').forEach(input => {
+        input.addEventListener('input', () => updateProgressBarVisual(input));
+        updateProgressBarVisual(input);
     });
     
-    console.log(`✅ ${cronograma.length} atividades carregadas`);
+    console.log('✅ Admin view carregada com dados:', dadosObra);
 }
 
-// CARREGAR SELETOR DE PADRÃO
-function carregarSeletorPadrao() {
-    const container = document.getElementById('cronograma-padrao-container');
-    if (!container) {
-        // Criar container se não existir
-        const novoContainer = document.createElement('div');
-        novoContainer.id = 'cronograma-padrao-container';
-        novoContainer.style.cssText = `
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding: 25px;
-            margin: 20px 0;
-            border-radius: 10px;
-            border: 2px solid #007bff;
-        `;
-        
-        // Inserir antes da tabela
-        const tabela = document.querySelector('.table-responsive');
-        if (tabela) {
-            tabela.parentNode.insertBefore(novoContainer, tabela);
-        }
-    }
+// --- ADICIONAR SEÇÃO DE CRONOGRAMAS PADRÃO ---
+function adicionarSecaoCronogramasPadrao() {
+    // Verificar se já existe
+    if (document.getElementById('cronogramas-padrao-section')) return;
     
-    const containerFinal = document.getElementById('cronograma-padrao-container');
-    containerFinal.innerHTML = `
-        <h3 style="color: #007bff; margin-bottom: 20px;">
-            🏗️ Cronogramas Padrão
-        </h3>
+    // Encontrar onde inserir (antes da tabela)
+    const tableSection = document.querySelector('.chronogram-section');
+    if (!tableSection) return;
+    
+    // Criar seção
+    const secaoPadrao = document.createElement('section');
+    secaoPadrao.id = 'cronogramas-padrao-section';
+    secaoPadrao.className = 'chronogram-section';
+    secaoPadrao.style.cssText = 'background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 2px solid #007bff;';
+    
+    secaoPadrao.innerHTML = `
+        <h2><i class="fas fa-templates"></i> Cronogramas Padrão</h2>
+        <p style="margin-bottom: 20px; color: #666;">Selecione um cronograma padrão para começar rapidamente:</p>
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px;">
             ${Object.keys(CRONOGRAMAS_PADRAO).map(key => {
                 const padrao = CRONOGRAMAS_PADRAO[key];
                 return `
-                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
-                        <h4 style="margin: 0 0 10px 0; color: #333;">${padrao.nome}</h4>
-                        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
-                            ${padrao.atividades.length} atividades
-                        </p>
-                        <button onclick="aplicarCronogramaPadrao('${key}')" 
-                                style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%;">
-                            ✅ Aplicar Este Cronograma
+                    <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #ddd; text-align: center;">
+                        <h3 style="color: #007bff; margin-bottom: 10px;">${padrao.nome}</h3>
+                        <p style="color: #666; margin-bottom: 15px;">${padrao.atividades.length} atividades</p>
+                        <button onclick="aplicarCronogramaPadrao('${key}')" class="btn btn-success" style="width: 100%;">
+                            <i class="fas fa-check"></i> Aplicar Este Cronograma
                         </button>
                     </div>
                 `;
@@ -221,20 +435,20 @@ function carregarSeletorPadrao() {
         </div>
         
         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <button onclick="limparCronograma()" 
-                    style="background: #dc3545; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer;">
-                🗑️ Limpar Cronograma Atual
+            <button onclick="limparCronograma()" class="btn btn-danger">
+                <i class="fas fa-trash-alt"></i> Limpar Cronograma
             </button>
-            
-            <button onclick="adicionarAtividadeManual()" 
-                    style="background: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer;">
-                ➕ Adicionar Atividade Manual
+            <button onclick="adicionarAtividadeManual()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Adicionar Atividade Manual
             </button>
         </div>
     `;
+    
+    // Inserir antes da tabela
+    tableSection.parentNode.insertBefore(secaoPadrao, tableSection);
 }
 
-// APLICAR CRONOGRAMA PADRÃO
+// --- APLICAR CRONOGRAMA PADRÃO ---
 async function aplicarCronogramaPadrao(tipoPadrao) {
     const padrao = CRONOGRAMAS_PADRAO[tipoPadrao];
     if (!padrao) return;
@@ -257,7 +471,7 @@ async function aplicarCronogramaPadrao(tipoPadrao) {
     
     try {
         await salvarDados();
-        carregarCronograma();
+        carregarAdminView();
         alert(`✅ Cronograma "${padrao.nome}" aplicado com sucesso!\n\n${padrao.atividades.length} atividades criadas.`);
     } catch (error) {
         console.error('❌ Erro ao aplicar padrão:', error);
@@ -265,24 +479,7 @@ async function aplicarCronogramaPadrao(tipoPadrao) {
     }
 }
 
-// LIMPAR CRONOGRAMA
-async function limparCronograma() {
-    const confirmar = confirm('🗑️ Tem certeza que deseja LIMPAR TODO O CRONOGRAMA?\n\nEsta ação é irreversível!');
-    if (!confirmar) return;
-    
-    dadosObra.cronograma = [];
-    
-    try {
-        await salvarDados();
-        carregarCronograma();
-        alert('✅ Cronograma limpo com sucesso!');
-    } catch (error) {
-        console.error('❌ Erro ao limpar:', error);
-        alert('❌ Erro ao limpar cronograma');
-    }
-}
-
-// ADICIONAR ATIVIDADE MANUAL
+// --- FUNÇÕES DE AÇÃO ---
 function adicionarAtividadeManual() {
     const descricao = prompt('📝 Descrição da atividade:');
     if (!descricao) return;
@@ -293,7 +490,7 @@ function adicionarAtividadeManual() {
     const prazo = prompt('📅 Prazo final (YYYY-MM-DD):') || '2025-12-31';
     
     const novaAtividade = {
-        id: `MANUAL${Date.now()}`,
+        id: gerarNovoId("ATV"),
         descricao: descricao,
         peso_global: parseInt(peso),
         progresso_atividade: 0,
@@ -305,7 +502,7 @@ function adicionarAtividadeManual() {
     dadosObra.cronograma.push(novaAtividade);
     
     salvarDados().then(() => {
-        carregarCronograma();
+        carregarAdminView();
         alert('✅ Atividade adicionada!');
     }).catch(error => {
         console.error('❌ Erro:', error);
@@ -313,62 +510,115 @@ function adicionarAtividadeManual() {
     });
 }
 
-// ATUALIZAR PROGRESSO
-async function atualizarProgresso(id, novoProgresso) {
-    const atividade = dadosObra.cronograma.find(a => a.id === id);
-    if (!atividade) return;
-    
-    atividade.progresso_atividade = parseInt(novoProgresso);
-    
-    // Atualizar status automaticamente
-    if (novoProgresso == 0) atividade.status = "Não Iniciada";
-    else if (novoProgresso == 100) atividade.status = "Concluída";
-    else atividade.status = "Em Andamento";
-    
-    await salvarDados();
-    carregarCronograma();
-}
+async function limparCronograma() {
+    if (!confirm('❓ Tem certeza que deseja LIMPAR TODO O CRONOGRAMA? Esta ação é irreversível!')) return;
 
-// ATUALIZAR STATUS
-async function atualizarStatus(id, novoStatus) {
-    const atividade = dadosObra.cronograma.find(a => a.id === id);
-    if (!atividade) return;
-    
-    atividade.status = novoStatus;
-    await salvarDados();
-}
-
-// REMOVER ATIVIDADE
-async function removerAtividade(index) {
-    if (!confirm('Remover esta atividade?')) return;
-    
-    dadosObra.cronograma.splice(index, 1);
+    dadosObra.cronograma = [];
     
     try {
         await salvarDados();
-        carregarCronograma();
+        carregarAdminView();
+        alert('✅ Cronograma limpo com sucesso!');
+    } catch (error) {
+        console.error('❌ Erro ao limpar cronograma:', error);
+        alert('❌ Erro ao limpar cronograma. Tente novamente.');
+    }
+}
+
+function updateProgressBarVisual(inputElement) {
+    const progressValue = parseFloat(inputElement.value) || 0;
+    const progressBarFill = inputElement.nextElementSibling?.querySelector('.progress-bar-fill');
+
+    if (progressBarFill) {
+        progressBarFill.style.width = `${progressValue}%`;
+    }
+
+    const activityId = inputElement.dataset.id;
+    const subActivityId = inputElement.dataset.subId;
+
+    if (subActivityId) {
+        const principal = dadosObra.cronograma.find(a => a.id === activityId);
+        const currentActivity = principal?.sub_atividades?.find(s => s.id === subActivityId);
+        
+        if (currentActivity && inputElement.dataset.type === 'progresso-sub') {
+            currentActivity.progresso_atividade = progressValue;
+            currentActivity.status = getAutomatedStatus(progressValue);
+        }
+    } else {
+        const currentActivity = dadosObra.cronograma.find(a => a.id === activityId);
+        
+        if (currentActivity && inputElement.dataset.type === 'progresso-principal') {
+            if (!currentActivity.sub_atividades || currentActivity.sub_atividades.length === 0) {
+                currentActivity.progresso_atividade = progressValue;
+                currentActivity.status = getAutomatedStatus(progressValue);
+            }
+        }
+    }
+    
+    const progressoGlobal = calcularProgressoGlobal(dadosObra.cronograma);
+    const progressoGlobalElement = document.getElementById('admin-progresso-global');
+    if (progressoGlobalElement) {
+        progressoGlobalElement.textContent = `${progressoGlobal.toFixed(1)}%`;
+    }
+}
+
+function removerAtividade(id, tipo, subId = null) {
+    if (!confirm('❓ Tem certeza que deseja remover esta atividade?')) return;
+
+    if (tipo === 'principal') {
+        dadosObra.cronograma = dadosObra.cronograma.filter(atv => atv.id !== id);
+    } else if (tipo === 'sub' && subId) {
+        const atividadePrincipal = dadosObra.cronograma.find(a => a.id === id);
+        if (atividadePrincipal && atividadePrincipal.sub_atividades) {
+            atividadePrincipal.sub_atividades = atividadePrincipal.sub_atividades.filter(sub => sub.id !== subId);
+            if (atividadePrincipal.sub_atividades.length === 0) {
+                delete atividadePrincipal.sub_atividades;
+            }
+        }
+    }
+    
+    salvarDados().then(() => {
+        carregarAdminView();
         alert('✅ Atividade removida!');
-    } catch (error) {
+    }).catch(error => {
         console.error('❌ Erro:', error);
-        alert('❌ Erro ao remover');
+        alert('❌ Erro ao remover atividade');
+    });
+}
+
+function toggleSubActivities(parentActivityId) {
+    const subActivityRows = document.querySelectorAll(`.sub-of-${parentActivityId}`);
+    const toggleIcon = document.querySelector(`.toggle-icon[onclick="toggleSubActivities('${parentActivityId}')"]`);
+
+    subActivityRows.forEach(row => {
+        row.classList.toggle('sub-activity-hidden');
+    });
+
+    if (toggleIcon) {
+        toggleIcon.classList.toggle('expanded');
     }
 }
 
-// SALVAR DADOS
-async function salvarDados() {
+// --- INICIALIZAÇÃO ---
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Inicializando aplicação...');
+    
     try {
-        await db.collection('projetos').doc(PROJETO_ATUAL).set(dadosObra);
-        console.log('✅ Dados salvos');
+        // 1. Atualizar info da obra
+        await atualizarInfoObra();
+        
+        // 2. Carregar dados do projeto
+        await carregarDadosProjeto();
+        
+        // 3. Carregar interface
+        carregarAdminView();
+        
+        console.log('✅ Aplicação inicializada com sucesso');
+        
     } catch (error) {
-        console.error('❌ Erro ao salvar:', error);
-        throw error;
+        console.error('❌ Erro na inicialização:', error);
+        alert('Erro ao carregar dados. Verifique a conexão e recarregue a página.');
     }
-}
-
-// INICIALIZAR
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 Iniciando aplicação...');
-    carregarDados();
 });
 
-console.log('✅ Sistema de cronograma padrão carregado');
+console.log('✅ Script carregado completamente');
