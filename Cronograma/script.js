@@ -164,27 +164,98 @@ async function atualizarInfoObra() {
     }
 }
 
-// --- FUNÇÕES UTILITÁRIAS ---
+// --- FUNÇÕES UTILITÁRIAS MELHORADAS ---
 function getAutomatedStatus(progressValue) {
     if (progressValue === 0) return "Não Iniciada";
     if (progressValue === 100) return "Concluída";
     return "Em Andamento";
 }
 
+// FUNÇÃO PARA CALCULAR PROGRESSO DA ATIVIDADE PRINCIPAL A PARTIR DAS SUB-ATIVIDADES
+function calcularProgressoPrincipalPorSubAtividades(atividade) {
+    if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
+        // Se não tem sub-atividades, usa o progresso manual
+        return parseFloat(atividade.progresso_atividade) || 0;
+    }
+    
+    let progressoPonderado = 0;
+    let pesoTotalSubs = 0;
+    
+    atividade.sub_atividades.forEach(sub => {
+        const pesoLocal = parseFloat(sub.peso_local) || 0;
+        const progressoSub = parseFloat(sub.progresso_atividade) || 0;
+        
+        progressoPonderado += (pesoLocal * progressoSub);
+        pesoTotalSubs += pesoLocal;
+    });
+    
+    if (pesoTotalSubs === 0) return 0;
+    
+    const progressoCalculado = progressoPonderado / pesoTotalSubs;
+    return parseFloat(progressoCalculado.toFixed(2));
+}
+
+// FUNÇÃO PARA CALCULAR PROGRESSO GLOBAL DO PROJETO
 function calcularProgressoGlobal() {
     if (!dadosObra.cronograma || dadosObra.cronograma.length === 0) return 0;
     
-    let progressoTotal = 0;
-    let pesoTotal = 0;
+    let progressoGlobalPonderado = 0;
+    let pesoGlobalTotal = 0;
     
     dadosObra.cronograma.forEach(atividade => {
-        const peso = parseFloat(atividade.peso_global) || 0;
-        const progresso = parseFloat(atividade.progresso_atividade) || 0;
-        progressoTotal += peso * progresso;
-        pesoTotal += peso;
+        const pesoGlobal = parseFloat(atividade.peso_global) || 0;
+        const progressoEfetivo = calcularProgressoPrincipalPorSubAtividades(atividade);
+        
+        progressoGlobalPonderado += (pesoGlobal * progressoEfetivo);
+        pesoGlobalTotal += pesoGlobal;
     });
     
-    return pesoTotal > 0 ? (progressoTotal / pesoTotal) : 0;
+    if (pesoGlobalTotal === 0) return 0;
+    
+    const progressoGlobal = progressoGlobalPonderado / pesoGlobalTotal;
+    return parseFloat(progressoGlobal.toFixed(2));
+}
+
+// FUNÇÃO PARA VALIDAR PROGRESSO (0-100%)
+function validarProgresso(valor) {
+    const num = parseFloat(valor);
+    if (isNaN(num)) return 0;
+    if (num < 0) return 0;
+    if (num > 100) return 100;
+    return parseFloat(num.toFixed(2));
+}
+
+// FUNÇÃO PARA VALIDAR PESO GLOBAL TOTAL
+function validarPesoGlobalTotal() {
+    let pesoTotal = 0;
+    dadosObra.cronograma.forEach(atividade => {
+        pesoTotal += parseFloat(atividade.peso_global) || 0;
+    });
+    
+    return {
+        total: parseFloat(pesoTotal.toFixed(2)),
+        excede: pesoTotal > 100
+    };
+}
+
+// FUNÇÃO PARA VALIDAR PESO LOCAL DAS SUB-ATIVIDADES
+function validarPesoLocalSubAtividades(atividade) {
+    if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
+        return { total: 0, excede: false };
+    }
+    
+    let pesoTotalSubs = 0;
+    atividade.sub_atividades.forEach(sub => {
+        pesoTotalSubs += parseFloat(sub.peso_local) || 0;
+    });
+    
+    const pesoGlobalAtividade = parseFloat(atividade.peso_global) || 0;
+    
+    return {
+        total: parseFloat(pesoTotalSubs.toFixed(2)),
+        excede: pesoTotalSubs > pesoGlobalAtividade,
+        limite: pesoGlobalAtividade
+    };
 }
 
 function formatarMoeda(valor) {
@@ -245,7 +316,29 @@ function carregarDropdownAtividades() {
     console.log(`✅ Dropdown atualizado com ${dadosObra.cronograma.length} atividades principais`);
 }
 
-// --- CARREGAR CRONOGRAMA (CORRIGIDO PARA MOSTRAR SUB-ATIVIDADES) ---
+// --- ATUALIZAR DISPLAY DE PESO GLOBAL TOTAL ---
+function atualizarDisplayPesoGlobal() {
+    const validacao = validarPesoGlobalTotal();
+    const displayEl = document.getElementById('total-peso-global-display');
+    
+    if (displayEl) {
+        displayEl.textContent = validacao.total;
+        displayEl.style.color = validacao.excede ? '#dc3545' : '#28a745';
+        
+        if (validacao.excede) {
+            displayEl.parentElement.style.background = '#fff3cd';
+            displayEl.parentElement.style.border = '1px solid #ffeaa7';
+            displayEl.parentElement.style.borderRadius = '5px';
+            displayEl.parentElement.style.padding = '5px';
+        } else {
+            displayEl.parentElement.style.background = '';
+            displayEl.parentElement.style.border = '';
+            displayEl.parentElement.style.padding = '';
+        }
+    }
+}
+
+// --- CARREGAR CRONOGRAMA (VERSÃO MELHORADA) ---
 function carregarCronograma() {
     const cronogramaBody = document.getElementById('cronograma-body');
     if (!cronogramaBody) {
@@ -265,12 +358,16 @@ function carregarCronograma() {
 
     // CARREGAR ATIVIDADES PRINCIPAIS E SUB-ATIVIDADES
     dadosObra.cronograma.forEach((atividade, index) => {
+        // CALCULAR PROGRESSO EFETIVO DA PRINCIPAL
+        const progressoEfetivo = calcularProgressoPrincipalPorSubAtividades(atividade);
+        const temSubAtividades = atividade.sub_atividades && atividade.sub_atividades.length > 0;
+        
         // LINHA DA ATIVIDADE PRINCIPAL
         const row = cronogramaBody.insertRow();
         row.innerHTML = `
             <td data-label="Atividade">
                 <strong>${atividade.descricao}</strong>
-                ${atividade.sub_atividades && atividade.sub_atividades.length > 0 ? 
+                ${temSubAtividades ? 
                     `<span style="color: #007bff; margin-left: 10px;">(${atividade.sub_atividades.length} sub-atividades)</span>` : 
                     ''
                 }
@@ -281,9 +378,16 @@ function carregarCronograma() {
                        onchange="atualizarPesoAtividade(${index}, this.value)" style="width: 80px;">
             </td>
             <td data-label="Progresso (%)">
-                <input type="range" min="0" max="100" value="${atividade.progresso_atividade || 0}" 
-                       onchange="atualizarProgressoAtividade(${index}, this.value)" style="width: 100px;">
-                <span style="margin-left: 10px; font-weight: bold;">${atividade.progresso_atividade || 0}%</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="range" min="0" max="100" step="0.1" value="${progressoEfetivo}" 
+                           onchange="atualizarProgressoAtividade(${index}, this.value)" 
+                           style="flex: 1;" ${temSubAtividades ? 'disabled' : ''}>
+                    <input type="number" min="0" max="100" step="0.1" value="${progressoEfetivo}" 
+                           onchange="atualizarProgressoAtividade(${index}, this.value)" 
+                           style="width: 70px;" ${temSubAtividades ? 'disabled' : ''}>
+                    <span style="font-weight: bold; color: ${temSubAtividades ? '#007bff' : '#333'};">%</span>
+                </div>
+                ${temSubAtividades ? '<small style="color: #666;">Calculado pelas sub-atividades</small>' : ''}
             </td>
             <td data-label="Status">
                 <select onchange="atualizarStatusAtividade(${index}, this.value)" style="width: 100%;">
@@ -311,13 +415,17 @@ function carregarCronograma() {
                     </td>
                     <td data-label="Tipo"><span style="background: #6c757d; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">Sub</span></td>
                     <td data-label="Peso (%)">
-                        <input type="number" min="0" max="100" step="0.01" value="${subAtividade.peso_local || 0}" 
+                        <input type="number" min="0" max="${atividade.peso_global}" step="0.01" value="${subAtividade.peso_local || 0}" 
                                onchange="atualizarPesoSubAtividade(${index}, ${subIndex}, this.value)" style="width: 80px;">
                     </td>
                     <td data-label="Progresso (%)">
-                        <input type="range" min="0" max="100" value="${subAtividade.progresso_atividade || 0}" 
-                               onchange="atualizarProgressoSubAtividade(${index}, ${subIndex}, this.value)" style="width: 100px;">
-                        <span style="margin-left: 10px; font-weight: bold;">${subAtividade.progresso_atividade || 0}%</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" min="0" max="100" step="0.1" value="${subAtividade.progresso_atividade || 0}" 
+                                   onchange="atualizarProgressoSubAtividade(${index}, ${subIndex}, this.value)" style="flex: 1;">
+                            <input type="number" min="0" max="100" step="0.1" value="${subAtividade.progresso_atividade || 0}" 
+                                   onchange="atualizarProgressoSubAtividade(${index}, ${subIndex}, this.value)" style="width: 70px;">
+                            <span style="font-weight: bold;">%</span>
+                        </div>
                     </td>
                     <td data-label="Status">
                         <select onchange="atualizarStatusSubAtividade(${index}, ${subIndex}, this.value)" style="width: 100%;">
@@ -421,13 +529,23 @@ async function aplicarCronogramaPadrao(tipoPadrao) {
     }
 }
 
-// --- FUNÇÕES DE ATUALIZAÇÃO ---
+// --- FUNÇÕES DE ATUALIZAÇÃO MELHORADAS ---
 async function atualizarProgressoAtividade(index, novoProgresso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    atividade.progresso_atividade = parseInt(novoProgresso);
-    atividade.status = getAutomatedStatus(atividade.progresso_atividade);
+    // Validar progresso
+    const progressoValidado = validarProgresso(novoProgresso);
+    
+    // Se tem sub-atividades, não permite alteração manual
+    if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
+        alert('⚠️ Esta atividade possui sub-atividades. O progresso é calculado automaticamente.');
+        carregarAdminView(); // Recarregar para reverter a mudança
+        return;
+    }
+    
+    atividade.progresso_atividade = progressoValidado;
+    atividade.status = getAutomatedStatus(progressoValidado);
     
     await salvarDados();
     carregarAdminView();
@@ -445,18 +563,33 @@ async function atualizarPesoAtividade(index, novoPeso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    atividade.peso_global = parseFloat(novoPeso);
+    const pesoValidado = validarProgresso(novoPeso); // Reutiliza a validação 0-100
+    atividade.peso_global = pesoValidado;
+    
+    // Verificar se o peso global total excede 100%
+    const validacao = validarPesoGlobalTotal();
+    if (validacao.excede) {
+        alert(`⚠️ ATENÇÃO: O peso global total (${validacao.total}%) excede 100%!\n\nAjuste os pesos das atividades.`);
+    }
+    
     await salvarDados();
     carregarAdminView();
 }
 
-// --- FUNÇÕES PARA SUB-ATIVIDADES (CORRIGIDAS) ---
+// --- FUNÇÕES PARA SUB-ATIVIDADES MELHORADAS ---
 async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProgresso) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
     
-    atividade.sub_atividades[subIndex].progresso_atividade = parseInt(novoProgresso);
-    atividade.sub_atividades[subIndex].status = getAutomatedStatus(parseInt(novoProgresso));
+    const progressoValidado = validarProgresso(novoProgresso);
+    
+    atividade.sub_atividades[subIndex].progresso_atividade = progressoValidado;
+    atividade.sub_atividades[subIndex].status = getAutomatedStatus(progressoValidado);
+    
+    // Recalcular progresso da atividade principal
+    const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
+    atividade.progresso_atividade = novoProgressoPrincipal;
+    atividade.status = getAutomatedStatus(novoProgressoPrincipal);
     
     await salvarDados();
     carregarAdminView();
@@ -474,7 +607,15 @@ async function atualizarPesoSubAtividade(atividadeIndex, subIndex, novoPeso) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
     
-    atividade.sub_atividades[subIndex].peso_local = parseFloat(novoPeso);
+    const pesoValidado = validarProgresso(novoPeso);
+    atividade.sub_atividades[subIndex].peso_local = pesoValidado;
+    
+    // Verificar se o peso das sub-atividades excede o peso da principal
+    const validacao = validarPesoLocalSubAtividades(atividade);
+    if (validacao.excede) {
+        alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!\n\nAjuste os pesos das sub-atividades.`);
+    }
+    
     await salvarDados();
     carregarAdminView();
 }
@@ -490,6 +631,14 @@ async function removerSubAtividade(atividadeIndex, subIndex) {
     // Se não há mais sub-atividades, remover o array
     if (atividade.sub_atividades.length === 0) {
         delete atividade.sub_atividades;
+        // Resetar progresso da principal para 0
+        atividade.progresso_atividade = 0;
+        atividade.status = "Não Iniciada";
+    } else {
+        // Recalcular progresso da principal
+        const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
+        atividade.progresso_atividade = novoProgressoPrincipal;
+        atividade.status = getAutomatedStatus(novoProgressoPrincipal);
     }
     
     try {
@@ -507,15 +656,16 @@ function adicionarAtividadeManual() {
     const descricao = prompt('📝 Descrição da atividade:');
     if (!descricao) return;
     
-    const peso = prompt('⚖️ Peso da atividade (1-100):');
+    const peso = prompt('⚖️ Peso da atividade (0.1-100):');
     if (!peso || isNaN(peso)) return;
     
+    const pesoValidado = validarProgresso(peso);
     const prazo = prompt('📅 Prazo final (YYYY-MM-DD):') || '2025-12-31';
     
     const novaAtividade = {
         id: gerarNovoId("ATV"),
         descricao: descricao,
-        peso_global: parseInt(peso),
+        peso_global: pesoValidado,
         progresso_atividade: 0,
         status: "Não Iniciada",
         prazo_final: prazo,
@@ -523,6 +673,12 @@ function adicionarAtividadeManual() {
     };
     
     dadosObra.cronograma.push(novaAtividade);
+    
+    // Verificar peso global total
+    const validacao = validarPesoGlobalTotal();
+    if (validacao.excede) {
+        alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
+    }
     
     salvarDados().then(() => {
         carregarAdminView();
@@ -543,10 +699,12 @@ async function adicionarAtividadePrincipal() {
         return;
     }
 
+    const pesoValidado = validarProgresso(pesoGlobal);
+
     const novaAtividade = {
         id: gerarNovoId("ATV"),
         descricao: descricao,
-        peso_global: pesoGlobal,
+        peso_global: pesoValidado,
         progresso_atividade: 0,
         status: "Não Iniciada",
         prazo_final: prazo || "2025-12-31",
@@ -554,6 +712,12 @@ async function adicionarAtividadePrincipal() {
     };
 
     dadosObra.cronograma.push(novaAtividade);
+    
+    // Verificar peso global total
+    const validacao = validarPesoGlobalTotal();
+    if (validacao.excede) {
+        alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
+    }
     
     try {
         await salvarDados();
@@ -572,7 +736,7 @@ async function adicionarAtividadePrincipal() {
     }
 }
 
-// --- ADICIONAR SUB-ATIVIDADE (CORRIGIDA) ---
+// --- ADICIONAR SUB-ATIVIDADE MELHORADA ---
 async function adicionarSubAtividade() {
     console.log('➕ Tentando adicionar sub-atividade...');
     
@@ -596,6 +760,8 @@ async function adicionarSubAtividade() {
         return;
     }
 
+    const pesoValidado = validarProgresso(pesoLocal);
+
     console.log('✅ Atividade principal encontrada:', atividadePrincipal.descricao);
 
     // Garantir que existe o array de sub-atividades
@@ -607,7 +773,7 @@ async function adicionarSubAtividade() {
     const novaSubAtividade = {
         id: gerarNovoId("SUB"),
         descricao: descricao,
-        peso_local: pesoLocal,
+        peso_local: pesoValidado,
         progresso_atividade: 0,
         status: "Não Iniciada",
         prazo_final: prazo || "2025-12-31"
@@ -616,6 +782,12 @@ async function adicionarSubAtividade() {
     console.log('📝 Nova sub-atividade criada:', novaSubAtividade);
 
     atividadePrincipal.sub_atividades.push(novaSubAtividade);
+    
+    // Verificar se o peso das sub-atividades excede o da principal
+    const validacao = validarPesoLocalSubAtividades(atividadePrincipal);
+    if (validacao.excede) {
+        alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!`);
+    }
     
     console.log(`✅ Sub-atividade adicionada. Total: ${atividadePrincipal.sub_atividades.length}`);
     
@@ -685,6 +857,9 @@ function carregarAdminView() {
     
     // Carregar dropdown de atividades
     carregarDropdownAtividades();
+    
+    // Atualizar display de peso global
+    atualizarDisplayPesoGlobal();
     
     console.log('✅ Admin view carregada');
 }
