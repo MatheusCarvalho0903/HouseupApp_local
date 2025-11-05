@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Firebase</title>
+</head>
+<body>
+    <h1>Teste Firebase</h1>
+    <button onclick="testarFirebase()">Testar Conexão</button>
+    <div id="resultado"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Configurar Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDq3mr-ryX_q8GAEyfTsQP2mzjpP9wOugE",
+            authDomain: "houseup-app.firebaseapp.com",
+            projectId: "houseup-app",
+            storageBucket: "houseup-app.firebasestorage.app",
+            messagingSenderId: "401114152723",
+            appId: "1:401114152723:web:f96eaf0a718342c0cf64e6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function testarFirebase() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Testando...';
+
+            try {
+                // Testar leitura do projeto Angela e Marco
+                const doc = await db.collection('projetos').doc('angela-marco').get();
+                
+                if (doc.exists) {
+                    const dados = doc.data();
+                    resultado.innerHTML = `
+                        <h3>✅ FIREBASE FUNCIONANDO!</h3>
+                        <p><strong>Projeto:</strong> ${dados.info_projeto?.nome_obra}</p>
+                        <p><strong>Atividades:</strong> ${dados.cronograma?.length || 0}</p>
+                        <p><strong>Material:</strong> R$ ${dados.gastos?.material?.total_realizado || 0}</p>
+                    `;
+                } else {
+                    resultado.innerHTML = '<h3>❌ Projeto não encontrado</h3>';
+                }
+            } catch (error) {
+                resultado.innerHTML = `<h3>❌ ERRO: ${error.message}</h3>`;
+            }
+        }
+    </script>
+</body>
+</html>
