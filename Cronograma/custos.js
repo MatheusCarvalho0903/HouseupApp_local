@@ -1,4 +1,4 @@
-console.log('✅ custos.js carregado com sucesso');
+console.log('✅ custos.js carregado');
 
 // ========== VARIÁVEIS GLOBAIS ==========
 let projetoId = null;
@@ -6,11 +6,10 @@ let projetoAtual = null;
 let chartCategorias = null;
 
 // ========== INICIALIZAÇÃO ==========
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async function() {
     try {
         console.log('🚀 Inicializando página de custos...');
         
-        // Obter ID do projeto da URL
         const urlParams = new URLSearchParams(window.location.search);
         projetoId = urlParams.get('projeto');
         
@@ -22,10 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         console.log('📋 Projeto ID:', projetoId);
         
-        // Carregar dados do projeto
         await carregarProjeto();
         
-        // Definir data atual no campo de data
         const dataInput = document.getElementById('data-lancamento');
         if (dataInput) {
             dataInput.valueAsDate = new Date();
@@ -55,21 +52,13 @@ async function carregarProjeto() {
         projetoAtual = doc.data();
         console.log('✅ Projeto carregado:', projetoAtual);
         
-        // Atualizar nome do projeto
         const nomeEl = document.getElementById('nome-projeto');
         if (nomeEl) {
         }
         
-        // Atualizar cards resumo
         atualizarCardsResumo();
-        
-        // Atualizar gráfico
         atualizarGraficoCategorias();
-        
-        // Atualizar categorias
         atualizarCategorias();
-        
-        // Atualizar histórico
         atualizarHistorico();
         
     } catch (error) {
@@ -103,20 +92,18 @@ function atualizarCardsResumo() {
 
 function calcularTotalGasto(gastos) {
     let total = 0;
-    
-    
     return total;
 }
 
 // ========== GRÁFICO DE CATEGORIAS ==========
 function atualizarGraficoCategorias() {
     
+    
     const dados = {
         labels: ['Material', 'Mão de Obra', 'Equipamentos', 'Serviços Terceiros'],
         datasets: [{
             label: 'Gastos por Categoria',
-            data: [
-            ],
+            data: [valorMaterial, valorMaoObra, valorEquipamentos, valorServicos],
             backgroundColor: [
                 'rgba(102, 126, 234, 0.8)',
                 'rgba(118, 75, 162, 0.8)',
@@ -152,7 +139,7 @@ function atualizarGraficoCategorias() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.label + ': ' + formatarMoeda(value);
+                            return label + ': ' + formatarMoeda(value);
                         }
                     }
                 }
@@ -160,7 +147,6 @@ function atualizarGraficoCategorias() {
         }
     };
     
-    // Destruir gráfico anterior se existir
     if (chartCategorias) {
         chartCategorias.destroy();
     }
@@ -209,54 +195,60 @@ function atualizarCategorias() {
     
     grid.innerHTML = '';
     
-    categorias.forEach(cat => {
+    categorias.forEach(function(cat) {
         const percentual = cat.previsto > 0 ? (cat.realizado / cat.previsto) * 100 : 0;
         
         const card = document.createElement('div');
         card.className = 'categoria-card';
         card.style.borderLeftColor = cat.color;
         
-        card.innerHTML = `
-            <div class="categoria-header">
-                <span class="categoria-nome">
-                    <i class="fas ${cat.icon}"></i>
-                    ${cat.nome}
-                </span>
-                <span class="categoria-badge">${cat.lancamentos} lançamentos</span>
-            </div>
-            <div class="categoria-valores">
-                ${cat.previsto > 0 ? `
-                    <div class="valor-row">
-                        <span class="valor-label">Previsto:</span>
-                        <span class="valor-numero">${formatarMoeda(cat.previsto)}</span>
-                    </div>
-                ` : ''}
-                <div class="valor-row">
-                    <span class="valor-label">Realizado:</span>
-                    <span class="valor-numero">${formatarMoeda(cat.realizado)}</span>
-                </div>
-                ${cat.previsto > 0 ? `
-                    <div class="valor-row">
-                        <span class="valor-label">Saldo:</span>
-                        <span class="valor-numero" style="color: ${cat.realizado > cat.previsto ? '#c62828' : '#388e3c'}">
-                            ${formatarMoeda(cat.previsto - cat.realizado)}
-                        </span>
-                    </div>
-                ` : ''}
-            </div>
-            ${cat.previsto > 0 ? `
-                <div class="categoria-progress">
-                    <div class="progress-label-cat">
-                        <span>Execução</span>
-                        <span>${percentual.toFixed(1)}%</span>
-                    </div>
-                    <div class="progress-bar-cat">
-                        <div class="progress-fill-cat" style="width: ${Math.min(percentual, 100)}%; background: ${cat.color}"></div>
-                    </div>
-                </div>
-            ` : ''}
-        `;
+        let html = '<div class="categoria-header">';
+        html += '<span class="categoria-nome">';
+        html += '<i class="fas ' + cat.icon + '"></i>';
+        html += cat.nome;
+        html += '</span>';
+        html += '<span class="categoria-badge">' + cat.lancamentos + ' lançamentos</span>';
+        html += '</div>';
+        html += '<div class="categoria-valores">';
         
+        if (cat.previsto > 0) {
+            html += '<div class="valor-row">';
+            html += '<span class="valor-label">Previsto:</span>';
+            html += '<span class="valor-numero">' + formatarMoeda(cat.previsto) + '</span>';
+            html += '</div>';
+        }
+        
+        html += '<div class="valor-row">';
+        html += '<span class="valor-label">Realizado:</span>';
+        html += '<span class="valor-numero">' + formatarMoeda(cat.realizado) + '</span>';
+        html += '</div>';
+        
+        if (cat.previsto > 0) {
+            const saldo = cat.previsto - cat.realizado;
+            const corSaldo = cat.realizado > cat.previsto ? '#c62828' : '#388e3c';
+            html += '<div class="valor-row">';
+            html += '<span class="valor-label">Saldo:</span>';
+            html += '<span class="valor-numero" style="color: ' + corSaldo + '">';
+            html += formatarMoeda(saldo);
+            html += '</span>';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        
+        if (cat.previsto > 0) {
+            html += '<div class="categoria-progress">';
+            html += '<div class="progress-label-cat">';
+            html += '<span>Execução</span>';
+            html += '<span>' + percentual.toFixed(1) + '%</span>';
+            html += '</div>';
+            html += '<div class="progress-bar-cat">';
+            html += '<div class="progress-fill-cat" style="width: ' + Math.min(percentual, 100) + '%; background: ' + cat.color + '"></div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        card.innerHTML = html;
         grid.appendChild(card);
     });
     
@@ -270,56 +262,56 @@ function atualizarHistorico() {
     
     tbody.innerHTML = '';
     
-    // Coletar todos os lançamentos
     let todosLancamentos = [];
     
-    Object.keys(gastos).forEach(categoria => {
-        historico.forEach(lancamento => {
+    const categoriasList = ['material', 'mao_de_obra', 'equipamentos', 'servicos_terceiros'];
+    
+    categoriasList.forEach(function(categoria) {
+        historico.forEach(function(lancamento) {
             todosLancamentos.push({
-                ...lancamento,
+                id: lancamento.id,
+                data: lancamento.data,
+                descricao: lancamento.descricao,
+                fornecedor: lancamento.fornecedor,
+                valor: lancamento.valor,
                 categoria: categoria
             });
         });
     });
     
-    // Ordenar por data (mais recente primeiro)
-    todosLancamentos.sort((a, b) => new Date(b.data) - new Date(a.data));
+    todosLancamentos.sort(function(a, b) {
+        return new Date(b.data) - new Date(a.data);
+    });
     
     if (todosLancamentos.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="empty-state-table">
-                    <i class="fas fa-inbox"></i>
-                    <h3>Nenhum lançamento encontrado</h3>
-                    <p>Adicione o primeiro lançamento de custo</p>
-                </td>
-            </tr>
-        `;
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state-table">' +
+            '<i class="fas fa-inbox"></i>' +
+            '<h3>Nenhum lançamento encontrado</h3>' +
+            '<p>Adicione o primeiro lançamento de custo</p>' +
+            '</td></tr>';
         return;
     }
     
-    todosLancamentos.forEach(lancamento => {
+    todosLancamentos.forEach(function(lancamento) {
         const tr = document.createElement('tr');
         
-        tr.innerHTML = `
-            <td>${formatarData(lancamento.data)}</td>
-            <td><span class="badge-categoria badge-${getCategoriaClass(lancamento.categoria)}">${getCategoriaLabel(lancamento.categoria)}</span></td>
-            <td>${lancamento.descricao}</td>
-            <td class="text-right"><strong>${formatarMoeda(lancamento.valor)}</strong></td>
-            <td>
-                <button class="btn-action btn-editar" onclick="editarLancamento('${lancamento.categoria}', '${lancamento.id}')">
-                    <i class="fas fa-edit"></i> Editar
-                </button>
-                <button class="btn-action btn-excluir" onclick="excluirLancamento('${lancamento.categoria}', '${lancamento.id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+        const badgeClass = 'badge-' + getCategoriaClass(lancamento.categoria);
+        const categoriaLabel = getCategoriaLabel(lancamento.categoria);
+        
+        tr.innerHTML = '<td>' + formatarData(lancamento.data) + '</td>' +
+            '<td><span class="badge-categoria ' + badgeClass + '">' + categoriaLabel + '</span></td>' +
+            '<td>' + lancamento.descricao + '</td>' +
+            '<td class="text-right"><strong>' + formatarMoeda(lancamento.valor) + '</strong></td>' +
+            '<td>' +
+            '<button class="btn-action btn-excluir" onclick="excluirLancamento(\'' + lancamento.categoria + '\', \'' + lancamento.id + '\')">' +
+            '<i class="fas fa-trash"></i>' +
+            '</button>' +
+            '</td>';
         
         tbody.appendChild(tr);
     });
     
-    console.log(`✅ Histórico atualizado: ${todosLancamentos.length} lançamentos`);
+    console.log('✅ Histórico atualizado:', todosLancamentos.length, 'lançamentos');
 }
 
 function getCategoriaClass(categoria) {
@@ -340,33 +332,20 @@ function getCategoriaLabel(categoria) {
     };
 }
 
-// ========== MODAL NOVO GASTO ==========
+// ========== MODAL ==========
 function abrirModalNovoGasto() {
-    try {
-        console.log('🎯 Abrindo modal de novo gasto...');
-        
-        const modal = document.getElementById('modal-novo-gasto');
-        
-        if (!modal) {
-            console.error('❌ Modal não encontrado!');
-            alert('Erro: Modal não encontrado');
-            return;
-        }
-        
+    console.log('🎯 Abrindo modal...');
+    const modal = document.getElementById('modal-novo-gasto');
+    if (modal) {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
         
-        // Garantir que a data está preenchida
         const dataInput = document.getElementById('data-lancamento');
         if (dataInput && !dataInput.value) {
             dataInput.valueAsDate = new Date();
         }
         
         console.log('✅ Modal aberto');
-        
-    } catch (error) {
-        console.error('❌ Erro ao abrir modal:', error);
-        alert('Erro ao abrir modal: ' + error.message);
     }
 }
 
@@ -388,7 +367,7 @@ function fecharModalNovoGasto() {
     }
 }
 
-// ========== SALVAR NOVO GASTO ==========
+// ========== SALVAR GASTO ==========
 async function salvarNovoGasto(event) {
     event.preventDefault();
     
@@ -410,13 +389,9 @@ async function salvarNovoGasto(event) {
         
         const categoria = dados.categoria;
         
-        console.log('📋 Novo lançamento:', novoLancamento);
-        console.log('📂 Categoria:', categoria);
-        
-        // Atualizar Firebase
         const projetoRef = db.collection('projetos').doc(projetoId);
         
-        await db.runTransaction(async (transaction) => {
+        await db.runTransaction(async function(transaction) {
             const doc = await transaction.get(projetoRef);
             
             if (!doc.exists) {
@@ -436,31 +411,24 @@ async function salvarNovoGasto(event) {
                 gastos[categoria].historico = [];
             }
             
-            // Adicionar lançamento ao histórico
             gastos[categoria].historico.push(novoLancamento);
             
-            // Atualizar total realizado
-            
-            // Atualizar documento
             transaction.update(projetoRef, {
                 gastos: gastos,
                 atualizado_em: new Date().toISOString()
             });
         });
         
-        console.log('✅ Lançamento salvo no Firebase');
+        console.log('✅ Lançamento salvo');
         
-        // Recarregar projeto
         await carregarProjeto();
-        
-        // Fechar modal
         fecharModalNovoGasto();
         
         alert('✅ Lançamento salvo com sucesso!');
         
     } catch (error) {
-        console.error('❌ Erro ao salvar lançamento:', error);
-        alert('❌ Erro ao salvar lançamento. Tente novamente.');
+        console.error('❌ Erro ao salvar:', error);
+        alert('❌ Erro ao salvar lançamento');
     }
 }
 
@@ -471,11 +439,11 @@ async function excluirLancamento(categoria, lancamentoId) {
     }
     
     try {
-        console.log('🗑️ Excluindo lançamento...', categoria, lancamentoId);
+        console.log('🗑️ Excluindo lançamento...');
         
         const projetoRef = db.collection('projetos').doc(projetoId);
         
-        await db.runTransaction(async (transaction) => {
+        await db.runTransaction(async function(transaction) {
             const doc = await transaction.get(projetoRef);
             
             if (!doc.exists) {
@@ -487,8 +455,9 @@ async function excluirLancamento(categoria, lancamentoId) {
                 throw new Error('Categoria não encontrada');
             }
             
-            // Encontrar lançamento
-            const index = gastos[categoria].historico.findIndex(l => l.id === lancamentoId);
+            const index = gastos[categoria].historico.findIndex(function(l) {
+                return l.id === lancamentoId;
+            });
             
             if (index === -1) {
                 throw new Error('Lançamento não encontrado');
@@ -496,13 +465,9 @@ async function excluirLancamento(categoria, lancamentoId) {
             
             const lancamento = gastos[categoria].historico[index];
             
-            // Remover do histórico
             gastos[categoria].historico.splice(index, 1);
-            
-            // Atualizar total realizado
             gastos[categoria].total_realizado -= lancamento.valor;
             
-            // Atualizar documento
             transaction.update(projetoRef, {
                 gastos: gastos,
                 atualizado_em: new Date().toISOString()
@@ -511,30 +476,18 @@ async function excluirLancamento(categoria, lancamentoId) {
         
         console.log('✅ Lançamento excluído');
         
-        // Recarregar projeto
         await carregarProjeto();
-        
         alert('✅ Lançamento excluído com sucesso!');
         
     } catch (error) {
-        console.error('❌ Erro ao excluir lançamento:', error);
-        alert('❌ Erro ao excluir lançamento. Tente novamente.');
+        console.error('❌ Erro ao excluir:', error);
+        alert('❌ Erro ao excluir lançamento');
     }
 }
 
-// ========== EDITAR LANÇAMENTO ==========
-function editarLancamento(categoria, lancamentoId) {
-    // TODO: Implementar edição
-    alert('🚧 Função de edição em desenvolvimento');
-}
-
-// ========== FILTRAR HISTÓRICO ==========
+// ========== FILTRAR ==========
 function filtrarHistorico() {
-    const categoriaFiltro = document.getElementById('filtro-categoria')?.value;
-    const periodoFiltro = document.getElementById('filtro-periodo')?.value;
-    
-    // TODO: Implementar filtros
-    console.log('🔍 Filtrar:', categoriaFiltro, periodoFiltro);
+    console.log('🔍 Filtrar histórico - em desenvolvimento');
 }
 
 // ========== UTILITÁRIOS ==========
@@ -555,8 +508,6 @@ function formatarData(data) {
 }
 
 // ========== EVENT LISTENERS ==========
-
-// Fechar modal ao clicar fora
 window.addEventListener('click', function(e) {
     const modal = document.getElementById('modal-novo-gasto');
     if (e.target === modal) {
@@ -564,7 +515,6 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// Fechar modal com ESC
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         fecharModalNovoGasto();
