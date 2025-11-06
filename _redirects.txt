@@ -1,0 +1,4 @@
+/  /home.html  200
+/cronograma  /cronograma/index.html  200
+/cronograma/  /cronograma/index.html  200
+/cronograma/*  /cronograma/:splat  200
