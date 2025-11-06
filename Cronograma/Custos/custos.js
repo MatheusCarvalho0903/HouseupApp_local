@@ -31,15 +31,6 @@ function fecharModalNovoGasto() {
     }
 }
 
-function formatarMoeda(valor) {
-        valor = 0;
-    }
-    var formatted = valor.toFixed(2);
-    var parts = formatted.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return 'R$ ' + parts[0] + ',' + parts[1];
-}
-
 function atualizarElemento(id, valor) {
     var elemento = document.getElementById(id);
     if (elemento) {
@@ -55,10 +46,6 @@ function salvarNovoGasto(event) {
     console.log('💾 Salvando novo gasto...');
     alert('Funcionalidade de salvar será implementada!');
     fecharModalNovoGasto();
-}
-
-function filtrarHistorico() {
-    console.log('🔍 Filtrando histórico');
 }
 
 function editarLancamento(index) {
@@ -83,10 +70,6 @@ function formatarData(data) {
     }
     return dataObj.toLocaleDateString('pt-BR');
 }
-
-// ============================================
-// CARREGAR PROJETO DO FIREBASE
-// ============================================
 
 function carregarProjeto() {
     console.log('📂 Buscando projeto:', projetoId);
@@ -115,11 +98,6 @@ function carregarProjeto() {
             console.error('❌ Erro Firebase:', erro);
             alert('Erro ao carregar projeto: ' + erro.message);
         });
-}
-
-// ============================================
-// ATUALIZAR INTERFACE
-// ============================================
 
 function atualizarInterface() {
     console.log('🎨 Atualizando interface');
@@ -231,10 +209,6 @@ function atualizarHistorico() {
 
     console.log('✅ Histórico atualizado com', todosLancamentos.length, 'lançamentos');
 }
-
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
 
 function inicializarPagina() {
     console.log('🔄 Inicializando página de custos');
