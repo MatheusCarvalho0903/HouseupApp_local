@@ -317,10 +317,18 @@ function getCategoriaLabel(categoria) {
 
 // ========== MODAL NOVO GASTO ==========
 function abrirModalNovoGasto() {
-    document.getElementById('modal-novo-gasto').style.display = 'block';
+    console.log('Tentando abrir modal...'); // ← ADICIONE ESTA LINHA
+    const modal = document.getElementById('modal-novo-gasto');
+    console.log('Modal encontrado:', modal); // ← ADICIONE ESTA LINHA
+    
+    if (!modal) {
+        console.error('Modal não encontrado!');
+        return;
+    }
+    
+    modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 }
-
 function fecharModalNovoGasto() {
     document.getElementById('modal-novo-gasto').style.display = 'none';
     document.body.style.overflow = 'auto';
