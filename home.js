@@ -317,7 +317,7 @@ function abrirProjeto(projetoId) {
     localStorage.setItem('projetoAtual', projetoId);
     
     // Redirecionar para cronograma (temporário)
-    window.location.href = `cronograma/?projeto=${projetoId}`;
+    window.location.href = `cronograma/cronograma.html?projeto=${projetoId}`;
 }
 
 function editarProjeto(projetoId) {
