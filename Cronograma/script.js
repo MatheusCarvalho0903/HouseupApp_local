@@ -1164,65 +1164,81 @@ document.getElementById('custos-form-rapido')?.addEventListener('submit', lancar
 // Manter compatibilidade com formulário antigo (se existir)
 document.getElementById('custos-form')?.addEventListener('submit', async function(event) {
     event.preventDefault();
-    const novoMaterial = parseFloat(document.getElementById('novo-material')?.value) || 0;
-    const novaMaoDeObra = parseFloat(document.getElementById('nova-mao-de-obra')?.value) || 0;
 
     if (novoMaterial === 0 && novaMaoDeObra === 0) {
         alert('Por favor, informe pelo menos um valor para material ou mão de obra.');
         return;
     }
 
-    // Garantir estrutura de gastos
+    // Garantir estrutura completa de gastos
     if (!dadosObra.gastos) {
-        dadosObra.gastos = {
-            material: { total_realizado: 0 },
-            mao_de_obra: { total_realizado: 0 },
-            historico: []
-        };
+        dadosObra.gastos = {};
+    }
+    
+    if (!dadosObra.gastos.material) {
+        dadosObra.gastos.material = { total_realizado: 0, historico: [] };
+    }
+    
+    if (!dadosObra.gastos.mao_de_obra) {
+        dadosObra.gastos.mao_de_obra = { total_realizado: 0, historico: [] };
+    }
+    
+    // Garantir que existe o array historico
+    if (!dadosObra.gastos.material.historico) {
+        dadosObra.gastos.material.historico = [];
+    }
+    
+    if (!dadosObra.gastos.mao_de_obra.historico) {
+        dadosObra.gastos.mao_de_obra.historico = [];
     }
 
-    if (!dadosObra.gastos.historico) {
-        dadosObra.gastos.historico = [];
-    }
+    const dataHoje = new Date().toISOString().split('T')[0];
 
-    // Adicionar ao histórico detalhado
+    // CRIAR LANÇAMENTO NO HISTÓRICO DE MATERIAL
     if (novoMaterial > 0) {
-        dadosObra.gastos.historico.push({
-            id: gerarNovoId('CST'),
-            data: new Date().toISOString().split('T')[0],
-            categoria: 'Material',
-            descricao: 'Lançamento via formulário antigo',
-            fornecedor: 'Não informado',
+        const lancamentoMaterial = {
+            id: gerarNovoId("LANC"),
+            data: dataHoje,
+            descricao: 'Lançamento rápido - Material',
+            fornecedor: '',
             valor: novoMaterial,
-            data_lancamento: new Date().toISOString(),
-            status_pagamento: 'Pago'
-        });
+            forma_pagamento: 'dinheiro',
+            observacoes: 'Lançamento feito pelo cronograma',
+            criado_em: new Date().toISOString(),
+            criado_por: 'Matheus'
+        };
+        
+        dadosObra.gastos.material.historico.push(lancamentoMaterial);
     }
 
+    // CRIAR LANÇAMENTO NO HISTÓRICO DE MÃO DE OBRA
     if (novaMaoDeObra > 0) {
-        dadosObra.gastos.historico.push({
-            id: gerarNovoId('CST'),
-            data: new Date().toISOString().split('T')[0],
-            categoria: 'Mão de Obra',
-            descricao: 'Lançamento via formulário antigo',
-            fornecedor: 'Não informado',
+        const lancamentoMaoObra = {
+            id: gerarNovoId("LANC"),
+            data: dataHoje,
+            descricao: 'Lançamento rápido - Mão de Obra',
+            fornecedor: '',
             valor: novaMaoDeObra,
-            data_lancamento: new Date().toISOString(),
-            status_pagamento: 'Pago'
-        });
+            forma_pagamento: 'dinheiro',
+            observacoes: 'Lançamento feito pelo cronogama',
+            criado_em: new Date().toISOString(),
+            criado_por: 'Matheus'
+        };
+        
+        dadosObra.gastos.mao_de_obra.historico.push(lancamentoMaoObra);
     }
-
-    dadosObra.gastos.material.total_realizado = (dadosObra.gastos.material.total_realizado || 0) + novoMaterial;
-    dadosObra.gastos.mao_de_obra.total_realizado = (dadosObra.gastos.mao_de_obra.total_realizado || 0) + novaMaoDeObra;
 
     try {
         await salvarDados();
         carregarAdminView();
         
-        if (document.getElementById('novo-material')) document.getElementById('novo-material').value = 0;
-        if (document.getElementById('nova-mao-de-obra')) document.getElementById('nova-mao-de-obra').value = 0;
+        document.getElementById('novo-material').value = 0;
+        document.getElementById('nova-mao-de-obra').value = 0;
         
-        alert('✅ Custos lançados com sucesso!');
+        alert('✅ Custos lançados com sucesso!\n\n' + 
+              (novoMaterial > 0 ? `Material: ${formatarMoeda(novoMaterial)}\n` : '') +
+              (novaMaoDeObra > 0 ? `Mão de Obra: ${formatarMoeda(novaMaoDeObra)}` : ''));
+              
     } catch (error) {
         console.error('❌ Erro ao lançar custos:', error);
         alert('❌ Erro ao lançar custos');

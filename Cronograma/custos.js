@@ -317,17 +317,39 @@ function getCategoriaLabel(categoria) {
 
 // ========== MODAL NOVO GASTO ==========
 function abrirModalNovoGasto() {
-    console.log('Tentando abrir modal...'); // ← ADICIONE ESTA LINHA
-    const modal = document.getElementById('modal-novo-gasto');
-    console.log('Modal encontrado:', modal); // ← ADICIONE ESTA LINHA
-    
-    if (!modal) {
-        console.error('Modal não encontrado!');
-        return;
+    try {
+        console.log('🎯 Abrindo modal de novo gasto...');
+        
+        const modal = document.getElementById('modal-novo-gasto');
+        
+        if (!modal) {
+            console.error('❌ Modal não encontrado!');
+            alert('Erro: Modal não encontrado. Verifique se o HTML foi carregado corretamente.');
+            return;
+        }
+        
+        console.log('✅ Modal encontrado:', modal);
+        
+        // Forçar display
+        modal.style.display = 'block';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        
+        // Bloquear scroll do body
+        document.body.style.overflow = 'hidden';
+        
+        // Garantir que a data está preenchida
+        const dataInput = document.getElementById('data-lancamento');
+        if (dataInput && !dataInput.value) {
+            dataInput.valueAsDate = new Date();
+        }
+        
+        console.log('✅ Modal aberto com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao abrir modal:', error);
+        alert('Erro ao abrir modal: ' + error.message);
     }
-    
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
 }
 function fecharModalNovoGasto() {
     document.getElementById('modal-novo-gasto').style.display = 'none';
