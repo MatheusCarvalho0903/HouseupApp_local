@@ -122,35 +122,99 @@
         </section>
 
         <!-- Lançamento de Custos -->
-        <section class="section-card">
-            <h2><i class="fas fa-dollar-sign"></i> Lançamento de Custos</h2>
-            <div class="custos-summary">
-                <div class="custo-item">
-                    <span class="custo-label">Total Material:</span>
-                    <span class="custo-value" id="total-material-admin">R$ 0,00</span>
-                </div>
-                <div class="custo-item">
-                    <span class="custo-label">Total Mão de Obra:</span>
-                    <span class="custo-value" id="total-mao-de-obra-admin">R$ 0,00</span>
-                </div>
+        <!-- Lançamento de Custos (Versão Melhorada) -->
+<section class="section-card">
+    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+        <h2><i class="fas fa-dollar-sign"></i> Lançamento Rápido de Custos</h2>
+        <a href="../custos/index.html" class="btn btn-primary">
+            <i class="fas fa-chart-line"></i> Gestão Completa de Custos
+        </a>
+    </div>
+    
+    <!-- Resumo por Categoria -->
+    <div class="custos-summary-grid">
+        <div class="custo-card material">
+            <div class="custo-icon"><i class="fas fa-boxes"></i></div>
+            <div class="custo-info">
+                <span class="custo-label">Material</span>
+                <span class="custo-value" id="total-material-admin">R\$ 0,00</span>
             </div>
-            
-            <form id="custos-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="novo-material">Novo Gasto Material (R$):</label>
-                        <input type="number" id="novo-material" step="0.01" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="nova-mao-de-obra">Novo Gasto Mão de Obra (R$):</label>
-                        <input type="number" id="nova-mao-de-obra" step="0.01" min="0" value="0">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus-circle"></i> Lançar Custos
-                </button>
-            </form>
-        </section>
+        </div>
+        <div class="custo-card mao-obra">
+            <div class="custo-icon"><i class="fas fa-hard-hat"></i></div>
+            <div class="custo-info">
+                <span class="custo-label">Mão de Obra</span>
+                <span class="custo-value" id="total-mao-de-obra-admin">R\$ 0,00</span>
+            </div>
+        </div>
+        <div class="custo-card equipamento">
+            <div class="custo-icon"><i class="fas fa-tools"></i></div>
+            <div class="custo-info">
+                <span class="custo-label">Equipamento</span>
+                <span class="custo-value" id="total-equipamento-admin">R\$ 0,00</span>
+            </div>
+        </div>
+        <div class="custo-card servicos">
+            <div class="custo-icon"><i class="fas fa-handshake"></i></div>
+            <div class="custo-info">
+                <span class="custo-label">Serviços</span>
+                <span class="custo-value" id="total-servicos-admin">R\$ 0,00</span>
+            </div>
+        </div>
+        <div class="custo-card total">
+            <div class="custo-icon"><i class="fas fa-calculator"></i></div>
+            <div class="custo-info">
+                <span class="custo-label">Total Geral</span>
+                <span class="custo-value" id="total-geral-admin">R\$ 0,00</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Lançamento Rápido -->
+    <form id="custos-form-rapido">
+        <h3><i class="fas fa-plus-circle"></i> Lançamento Rápido</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="custo-categoria">Categoria:</label>
+                <select id="custo-categoria" required>
+                    <option value="">Selecione...</option>
+                    <option value="Material">Material</option>
+                    <option value="Mão de Obra">Mão de Obra</option>
+                    <option value="Equipamento">Equipamento</option>
+                    <option value="Serviços">Serviços</option>
+                    <option value="Despesas Gerais">Despesas Gerais</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="custo-descricao">Descrição:</label>
+                <input type="text" id="custo-descricao" placeholder="Ex: Cimento CPIII 32" required>
+            </div>
+            <div class="form-group">
+                <label for="custo-valor">Valor (R\$):</label>
+                <input type="number" id="custo-valor" step="0.01" min="0" placeholder="0,00" required>
+            </div>
+            <div class="form-group">
+                <label for="custo-fornecedor">Fornecedor:</label>
+                <input type="text" id="custo-fornecedor" placeholder="Nome do fornecedor">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-plus"></i> Lançar Custo
+            </button>
+            <button type="button" onclick="limparFormularioCusto()" class="btn btn-secondary">
+                <i class="fas fa-eraser"></i> Limpar
+            </button>
+        </div>
+    </form>
+    
+    <!-- Últimos Lançamentos -->
+    <div class="ultimos-lancamentos">
+        <h3><i class="fas fa-history"></i> Últimos 5 Lançamentos</h3>
+        <div id="ultimos-custos-lista">
+            <!-- Será preenchido pelo JavaScript -->
+        </div>
+</section>
     </div>
 
     <!-- Scripts -->

@@ -277,15 +277,160 @@ async function salvarDados() {
 }
 
 // --- CARREGAR CUSTOS ---
+// --- ESTRUTURA DE DADOS DE CUSTOS MELHORADA ---
+const CATEGORIAS_CUSTO = {
+    'Material': { cor: '#ff9800', icone: 'fas fa-boxes' },
+    'Mão de Obra': { cor: '#2196f3', icone: 'fas fa-hard-hat' },
+    'Equipamento': { cor: '#9c27b0', icone: 'fas fa-tools' },
+    'Serviços': { cor: '#4caf50', icone: 'fas fa-handshake' },
+    'Despesas Gerais': { cor: '#607d8b', icone: 'fas fa-file-invoice' }
+};
+
+// --- CARREGAR CUSTOS MELHORADO ---
 function carregarCustos() {
-    const totalMaterial = dadosObra.gastos?.material?.total_realizado || 0;
-    const totalMaoObra = dadosObra.gastos?.mao_de_obra?.total_realizado || 0;
+    const gastos = dadosObra.gastos || {};
     
-    const materialEl = document.getElementById('total-material-admin');
-    const maoObraEl = document.getElementById('total-mao-de-obra-admin');
+    // Garantir estrutura de categorias
+    const categorias = {
+        'Material': 0,
+        'Mão de Obra': 0,
+        'Equipamento': 0,
+        'Serviços': 0,
+        'Despesas Gerais': 0
+    };
     
-    if (materialEl) materialEl.textContent = formatarMoeda(totalMaterial);
-    if (maoObraEl) maoObraEl.textContent = formatarMoeda(totalMaoObra);
+    // Se existir histórico detalhado, calcular por categoria
+    if (gastos.historico && Array.isArray(gastos.historico)) {
+        gastos.historico.forEach(lancamento => {
+            const categoria = lancamento.categoria || 'Despesas Gerais';
+            categorias[categoria] = (categorias[categoria] || 0) + (parseFloat(lancamento.valor) || 0);
+        });
+    } else {
+        // Compatibilidade com estrutura antiga
+        categorias['Material'] = gastos.material?.total_realizado || 0;
+        categorias['Mão de Obra'] = gastos.mao_de_obra?.total_realizado || 0;
+    }
+    
+    // Atualizar elementos na tela
+    const elementos = {
+        'total-material-admin': categorias['Material'],
+        'total-mao-de-obra-admin': categorias['Mão de Obra'],
+        'total-equipamento-admin': categorias['Equipamento'],
+        'total-servicos-admin': categorias['Serviços']
+    };
+    
+    Object.keys(elementos).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = formatarMoeda(elementos[id]);
+        }
+    });
+    
+    // Calcular e mostrar total geral
+    const totalGeral = Object.values(categorias).reduce((sum, valor) => sum + valor, 0);
+    const totalEl = document.getElementById('total-geral-admin');
+    if (totalEl) {
+        totalEl.textContent = formatarMoeda(totalGeral);
+    }
+    
+    // Carregar últimos lançamentos
+    carregarUltimosLancamentos();
+}
+
+// --- CARREGAR ÚLTIMOS LANÇAMENTOS ---
+function carregarUltimosLancamentos() {
+    const container = document.getElementById('ultimos-custos-lista');
+    if (!container) return;
+    
+    const historico = dadosObra.gastos?.historico || [];
+    const ultimos = historico.slice(-5).reverse(); // Últimos 5, mais recente primeiro
+    
+    if (ultimos.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhum lançamento ainda.</p>';
+        return;
+    }
+    
+    container.innerHTML = ultimos.map(lancamento => `
+        <div class="lancamento-item">
+            <div class="lancamento-info">
+                <span class="lancamento-categoria" style="background: ${CATEGORIAS_CUSTO[lancamento.categoria]?.cor || '#666'}">
+                    ${lancamento.categoria}
+                </span>
+                <div class="lancamento-descricao">${lancamento.descricao}</div>
+                <div class="lancamento-fornecedor">${lancamento.fornecedor || 'Não informado'}</div>
+            </div>
+            <div class="lancamento-valor">${formatarMoeda(lancamento.valor)}</div>
+        </div>
+    `).join('');
+}
+
+// --- FUNÇÃO PARA LANÇAR CUSTO RÁPIDO ---
+async function lancarCustoRapido(event) {
+    event.preventDefault();
+    
+    const categoria = document.getElementById('custo-categoria')?.value;
+    const descricao = document.getElementById('custo-descricao')?.value?.trim();
+    const valor = parseFloat(document.getElementById('custo-valor')?.value);
+    const fornecedor = document.getElementById('custo-fornecedor')?.value?.trim();
+    
+    if (!categoria || !descricao || isNaN(valor) || valor <= 0) {
+        alert('❌ Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+    
+    // Garantir estrutura de gastos
+    if (!dadosObra.gastos) {
+        dadosObra.gastos = {
+            material: { total_realizado: 0 },
+            mao_de_obra: { total_realizado: 0 },
+            historico: []
+        };
+    }
+    
+    if (!dadosObra.gastos.historico) {
+        dadosObra.gastos.historico = [];
+    }
+    
+    // Criar novo lançamento
+    const novoLancamento = {
+        id: gerarNovoId('CST'),
+        data: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        categoria: categoria,
+        descricao: descricao,
+        fornecedor: fornecedor || 'Não informado',
+        valor: valor,
+        data_lancamento: new Date().toISOString(),
+        status_pagamento: 'Pago' // Padrão para lançamento rápido
+    };
+    
+    // Adicionar ao histórico
+    dadosObra.gastos.historico.push(novoLancamento);
+    
+    // Atualizar totais por categoria (compatibilidade)
+    if (categoria === 'Material') {
+        dadosObra.gastos.material.total_realizado = (dadosObra.gastos.material.total_realizado || 0) + valor;
+    } else if (categoria === 'Mão de Obra') {
+        dadosObra.gastos.mao_de_obra.total_realizado = (dadosObra.gastos.mao_de_obra.total_realizado || 0) + valor;
+    }
+    
+    try {
+        await salvarDados();
+        carregarAdminView();
+        limparFormularioCusto();
+        alert('✅ Custo lançado com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao lançar custo:', error);
+        alert('❌ Erro ao salvar custo. Tente novamente.');
+    }
+}
+
+// --- LIMPAR FORMULÁRIO DE CUSTO ---
+function limparFormularioCusto() {
+    document.getElementById('custo-categoria').value = '';
+    document.getElementById('custo-descricao').value = '';
+    document.getElementById('custo-valor').value = '';
+    document.getElementById('custo-fornecedor').value = '';
 }
 
 // --- CARREGAR DROPDOWN DE ATIVIDADES ---
@@ -1013,14 +1158,58 @@ document.getElementById('cronograma-form')?.addEventListener('submit', async fun
 });
 
 // Event listener para o formulário de custos
+// Event listener para o formulário de custos rápido
+document.getElementById('custos-form-rapido')?.addEventListener('submit', lancarCustoRapido);
+
+// Manter compatibilidade com formulário antigo (se existir)
 document.getElementById('custos-form')?.addEventListener('submit', async function(event) {
     event.preventDefault();
-    const novoMaterial = parseFloat(document.getElementById('novo-material').value) || 0;
-    const novaMaoDeObra = parseFloat(document.getElementById('nova-mao-de-obra').value) || 0;
+    const novoMaterial = parseFloat(document.getElementById('novo-material')?.value) || 0;
+    const novaMaoDeObra = parseFloat(document.getElementById('nova-mao-de-obra')?.value) || 0;
 
     if (novoMaterial === 0 && novaMaoDeObra === 0) {
         alert('Por favor, informe pelo menos um valor para material ou mão de obra.');
         return;
+    }
+
+    // Garantir estrutura de gastos
+    if (!dadosObra.gastos) {
+        dadosObra.gastos = {
+            material: { total_realizado: 0 },
+            mao_de_obra: { total_realizado: 0 },
+            historico: []
+        };
+    }
+
+    if (!dadosObra.gastos.historico) {
+        dadosObra.gastos.historico = [];
+    }
+
+    // Adicionar ao histórico detalhado
+    if (novoMaterial > 0) {
+        dadosObra.gastos.historico.push({
+            id: gerarNovoId('CST'),
+            data: new Date().toISOString().split('T')[0],
+            categoria: 'Material',
+            descricao: 'Lançamento via formulário antigo',
+            fornecedor: 'Não informado',
+            valor: novoMaterial,
+            data_lancamento: new Date().toISOString(),
+            status_pagamento: 'Pago'
+        });
+    }
+
+    if (novaMaoDeObra > 0) {
+        dadosObra.gastos.historico.push({
+            id: gerarNovoId('CST'),
+            data: new Date().toISOString().split('T')[0],
+            categoria: 'Mão de Obra',
+            descricao: 'Lançamento via formulário antigo',
+            fornecedor: 'Não informado',
+            valor: novaMaoDeObra,
+            data_lancamento: new Date().toISOString(),
+            status_pagamento: 'Pago'
+        });
     }
 
     dadosObra.gastos.material.total_realizado = (dadosObra.gastos.material.total_realizado || 0) + novoMaterial;
@@ -1030,8 +1219,8 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
         await salvarDados();
         carregarAdminView();
         
-        document.getElementById('novo-material').value = 0;
-        document.getElementById('nova-mao-de-obra').value = 0;
+        if (document.getElementById('novo-material')) document.getElementById('novo-material').value = 0;
+        if (document.getElementById('nova-mao-de-obra')) document.getElementById('nova-mao-de-obra').value = 0;
         
         alert('✅ Custos lançados com sucesso!');
     } catch (error) {
