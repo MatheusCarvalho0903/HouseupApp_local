@@ -1,11 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <script>window.location.href = '/home.html';</script>
-    <meta http-equiv="refresh" content="0; url=/home.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseUp - Gestão de Obras</title>
+    <link rel="stylesheet" href="assets/css/global.css">
+    <link rel="stylesheet" href="assets/css/home.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <p>Redirecionando... <a href="/home.html">Clique aqui</a></p>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-home"></i>
+                    <h1>HouseUp</h1>
+                </div>
+                <div class="user-info">
+                    <span>Olá, <strong>Matheus</strong></span>
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Title -->
+            <div class="page-header">
+                <h2><i class="fas fa-building"></i> Meus Projetos</h2>
+                <button class="btn btn-primary" onclick="abrirModalNovoProjeto()">
+                    <i class="fas fa-plus"></i> Novo Projeto
+                </button>
+            </div>
+
+            <!-- Projects Grid -->
+            <div class="projects-grid" id="projects-grid">
+                <!-- Projects will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <i class="fas fa-home fa-3x"></i>
+                <h3>Nenhum projeto encontrado</h3>
+                <p>Crie seu primeiro projeto para começar a gerenciar suas obras</p>
+                <button class="btn btn-primary" onclick="abrirModalNovoProjeto()">
+                    <i class="fas fa-plus"></i> Criar Primeiro Projeto
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Novo Projeto -->
+    <div class="modal" id="modal-novo-projeto">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Novo Projeto</h3>
+                <button class="modal-close" onclick="fecharModalNovoProjeto()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="form-novo-projeto" onsubmit="criarNovoProjeto(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome-obra">Nome da Obra *</label>
+                            <input type="text" id="nome-obra" name="nome-obra" required placeholder="Ex: Residência João Silva">
+                        </div>
+                        <div class="form-group">
+                            <label for="codigo-obra">Código da Obra *</label>
+                            <input type="text" id="codigo-obra" name="codigo-obra" required placeholder="Ex: HOUS-003-2024">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipo-construcao">Tipo de Construção *</label>
+                            <select id="tipo-construcao" name="tipo-construcao" required>
+                                <option value="">Selecione...</option>
+                                <option value="terrea">Casa Térrea</option>
+                                <option value="sobrado">Sobrado</option>
+                                <option value="apartamento">Apartamento</option>
+                                <option value="comercial">Comercial</option>
+                                <option value="reforma">Reforma</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="area-total">Área Total (m²) *</label>
+                            <input type="number" id="area-total" name="area-total" required placeholder="Ex: 245" min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clientes">Clientes *</label>
+                            <input type="text" id="clientes" name="clientes" required placeholder="Ex: João Silva, Maria Silva">
+                            <small>Separe múltiplos clientes por vírgula</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="endereco">Endereço</label>
+                            <input type="text" id="endereco" name="endereco" placeholder="Ex: Araguari - MG">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="data-inicio">Data de Início</label>
+                            <input type="date" id="data-inicio" name="data-inicio">
+                        </div>
+                        <div class="form-group">
+                            <label for="prazo-meses">Prazo (meses)</label>
+                            <input type="number" id="prazo-meses" name="prazo-meses" placeholder="Ex: 18" min="1" max="60">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="orcamento-total">Orçamento Total (R\$)</label>
+                        <input type="number" id="orcamento-total" name="orcamento-total" placeholder="Ex: 500000" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observacoes">Observações</label>
+                        <textarea id="observacoes" name="observacoes" rows="3" placeholder="Características especiais, requisitos, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalNovoProjeto()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Criar Projeto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="home.js"></script>
 </body>
 </html>
