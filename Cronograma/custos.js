@@ -1,250 +1,181 @@
-console.log('✅ TESTE: arquivo carregado');
+console.log('Iniciando custos.js');
 
-let projetoId = null;
-let projetoAtual = null;
+var projetoId = null;
+var projetoAtual = null;
 
-// Inicializar
-document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        projetoId = urlParams.get('projeto');
-        
-        if (!projetoId) {
-            alert('Projeto não encontrado');
-            window.location.href = '../home.html';
-            return;
-        }
-        
-        await carregarProjeto();
-        
-        const dataInput = document.getElementById('data-lancamento');
-        if (dataInput) {
-            dataInput.valueAsDate = new Date();
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro:', error);
+// Quando carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado');
+    
+    var urlParams = new URLSearchParams(window.location.search);
+    projetoId = urlParams.get('projeto');
+    
+    console.log('Projeto ID:', projetoId);
+    
+    if (!projetoId) {
+        alert('Projeto não encontrado na URL');
+        return;
     }
+    
+    carregarProjeto();
 });
 
 // Carregar projeto
-async function carregarProjeto() {
-    try {
-        const doc = await db.collection('projetos').doc(projetoId).get();
-        
+function carregarProjeto() {
+    console.log('Carregando projeto...');
+    
+    db.collection('projetos').doc(projetoId).get().then(function(doc) {
         if (!doc.exists) {
-            alert('Projeto não encontrado');
-            window.location.href = '../home.html';
+            alert('Projeto não existe');
             return;
         }
         
         projetoAtual = doc.data();
+        console.log('Projeto carregado:', projetoAtual);
         
-        const nomeEl = document.getElementById('nome-projeto');
-        if (nomeEl) {
-        }
+        var nome = projetoAtual.info_projeto.nome_obra;
+        document.getElementById('nome-projeto').textContent = nome;
         
-        atualizarCardsResumo();
+        atualizarCards();
         atualizarHistorico();
         
-    } catch (error) {
-        console.error('❌ Erro:', error);
-    }
+    }).catch(function(erro) {
+        console.error('Erro:', erro);
+        alert('Erro ao carregar projeto');
+    });
 }
 
 // Atualizar cards
-function atualizarCardsResumo() {
+function atualizarCards() {
     
-    let totalGasto = 0;
+    var totalMaterial = 0;
+    var totalMaoObra = 0;
     
-    const saldoRestante = orcamento - totalGasto;
-    const percentualGasto = orcamento > 0 ? (totalGasto / orcamento) * 100 : 0;
-    
-    const orcamentoEl = document.getElementById('orcamento-total');
-    const gastoEl = document.getElementById('total-gasto');
-    const saldoEl = document.getElementById('saldo-restante');
-    const percentualEl = document.getElementById('percentual-gasto');
-    
-    if (orcamentoEl) orcamentoEl.textContent = formatarMoeda(orcamento);
-    if (gastoEl) gastoEl.textContent = formatarMoeda(totalGasto);
-    if (saldoEl) {
-        saldoEl.textContent = formatarMoeda(saldoRestante);
-        saldoEl.style.color = saldoRestante < 0 ? '#c62828' : '#333';
+    if (gastos.material) {
     }
-    if (percentualEl) percentualEl.textContent = percentualGasto.toFixed(1) + '%';
+    
+    if (gastos.mao_de_obra) {
+    }
+    
+    var totalGasto = totalMaterial + totalMaoObra;
+    var saldo = orcamentoTotal - totalGasto;
+    
+    var elemOrcamento = document.getElementById('orcamento-total');
+    var elemGasto = document.getElementById('total-gasto');
+    var elemSaldo = document.getElementById('saldo-restante');
+    
+    if (elemOrcamento) {
+        elemOrcamento.textContent = formatarMoeda(orcamentoTotal);
+    }
+    
+    if (elemGasto) {
+        elemGasto.textContent = formatarMoeda(totalGasto);
+    }
+    
+    if (elemSaldo) {
+        elemSaldo.textContent = formatarMoeda(saldo);
+    }
+    
+    console.log('Cards atualizados');
 }
 
 // Atualizar histórico
 function atualizarHistorico() {
-    const tbody = document.getElementById('historico-tbody');
-    if (!tbody) return;
+    var tbody = document.getElementById('historico-tbody');
     
-    tbody.innerHTML = '';
-    
-    let todosLancamentos = [];
-    const cats = ['material', 'mao_de_obra', 'equipamentos', 'servicos_terceiros'];
-    
-    cats.forEach(function(cat) {
-        hist.forEach(function(lanc) {
-            todosLancamentos.push({
-                id: lanc.id,
-                data: lanc.data,
-                descricao: lanc.descricao,
-                fornecedor: lanc.fornecedor,
-                valor: lanc.valor,
-                categoria: cat
-            });
-        });
-    });
-    
-    todosLancamentos.sort(function(a, b) {
-        return new Date(b.data) - new Date(a.data);
-    });
-    
-    if (todosLancamentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhum lançamento encontrado</td></tr>';
+    if (!tbody) {
+        console.log('Tabela não encontrada');
         return;
     }
     
-    todosLancamentos.forEach(function(lanc) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = 
-            '<td>' + formatarData(lanc.data) + '</td>' +
-            '<td>' + getLabelCategoria(lanc.categoria) + '</td>' +
-            '<td>' + lanc.descricao + '</td>' +
-            '<td style="text-align:right"><strong>' + formatarMoeda(lanc.valor) + '</strong></td>' +
-            '<td><button onclick="excluirLancamento(\'' + lanc.categoria + '\',\'' + lanc.id + '\')">🗑️</button></td>';
+    tbody.innerHTML = '';
+    
+    var todosLancamentos = [];
+    
+    // Material
+    if (gastos.material && gastos.material.historico) {
+        var histMaterial = gastos.material.historico;
+        for (var i = 0; i < histMaterial.length; i++) {
+            todosLancamentos.push({
+                data: histMaterial[i].data,
+                categoria: 'Material',
+                descricao: histMaterial[i].descricao,
+                valor: histMaterial[i].valor
+            });
+        }
+    }
+    
+    // Mão de obra
+    if (gastos.mao_de_obra && gastos.mao_de_obra.historico) {
+        var histMaoObra = gastos.mao_de_obra.historico;
+        for (var i = 0; i < histMaoObra.length; i++) {
+            todosLancamentos.push({
+                data: histMaoObra[i].data,
+                categoria: 'Mão de Obra',
+                descricao: histMaoObra[i].descricao,
+                valor: histMaoObra[i].valor
+            });
+        }
+    }
+    
+    console.log('Total de lançamentos:', todosLancamentos.length);
+    
+    if (todosLancamentos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">Nenhum lançamento encontrado</td></tr>';
+        return;
+    }
+    
+    for (var i = 0; i < todosLancamentos.length; i++) {
+        var lanc = todosLancamentos[i];
+        
+        var tr = document.createElement('tr');
+        
+        var html = '';
+        html += '<td>' + lanc.data + '</td>';
+        html += '<td>' + lanc.categoria + '</td>';
+        html += '<td>' + lanc.descricao + '</td>';
+        html += '<td>' + lanc.fornecedor + '</td>';
+        html += '<td style="text-align:right">' + formatarMoeda(lanc.valor) + '</td>';
+        html += '<td>-</td>';
+        
+        tr.innerHTML = html;
         tbody.appendChild(tr);
-    });
+    }
+    
+    console.log('Histórico atualizado');
 }
 
-function getLabelCategoria(cat) {
-    const labels = {
-        'material': 'Material',
-        'mao_de_obra': 'Mão de Obra',
-        'equipamentos': 'Equipamentos',
-        'servicos_terceiros': 'Serviços Terceiros'
-    };
-}
-
-// Modal
+// Abrir modal
 function abrirModalNovoGasto() {
-    const modal = document.getElementById('modal-novo-gasto');
+    console.log('Abrindo modal');
+    var modal = document.getElementById('modal-novo-gasto');
     if (modal) {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 }
 
+// Fechar modal
 function fecharModalNovoGasto() {
-    const modal = document.getElementById('modal-novo-gasto');
+    console.log('Fechando modal');
+    var modal = document.getElementById('modal-novo-gasto');
     if (modal) {
         modal.style.display = 'none';
-    }
-    document.body.style.overflow = 'auto';
-}
-
-// Salvar
-async function salvarNovoGasto(event) {
-    event.preventDefault();
-    
-    try {
-        const formData = new FormData(event.target);
-        const dados = Object.fromEntries(formData);
-        
-        const novoLanc = {
-            id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-            data: dados['data-lancamento'],
-            descricao: dados.descricao,
-            valor: parseFloat(dados.valor),
-            forma_pagamento: dados['forma-pagamento'],
-            criado_em: new Date().toISOString(),
-            criado_por: 'Matheus'
-        };
-        
-        const categoria = dados.categoria;
-        const projetoRef = db.collection('projetos').doc(projetoId);
-        
-        await db.runTransaction(async function(transaction) {
-            const doc = await transaction.get(projetoRef);
-            const projeto = doc.data();
-            
-            if (!gastos[categoria]) {
-                gastos[categoria] = { total_realizado: 0, historico: [] };
-            }
-            if (!gastos[categoria].historico) {
-                gastos[categoria].historico = [];
-            }
-            
-            gastos[categoria].historico.push(novoLanc);
-            
-            transaction.update(projetoRef, {
-                gastos: gastos,
-                atualizado_em: new Date().toISOString()
-            });
-        });
-        
-        await carregarProjeto();
-        fecharModalNovoGasto();
-        alert('✅ Lançamento salvo!');
-        
-    } catch (error) {
-        console.error('❌ Erro:', error);
-        alert('❌ Erro ao salvar');
+        document.body.style.overflow = 'auto';
     }
 }
 
-// Excluir
-async function excluirLancamento(categoria, lancId) {
-    if (!confirm('Excluir este lançamento?')) return;
-    
-    try {
-        const projetoRef = db.collection('projetos').doc(projetoId);
-        
-        await db.runTransaction(async function(transaction) {
-            const doc = await transaction.get(projetoRef);
-            const projeto = doc.data();
-            
-            const idx = gastos[categoria].historico.findIndex(function(l) {
-                return l.id === lancId;
-            });
-            
-            if (idx === -1) throw new Error('Lançamento não encontrado');
-            
-            const lanc = gastos[categoria].historico[idx];
-            gastos[categoria].historico.splice(idx, 1);
-            gastos[categoria].total_realizado -= lanc.valor;
-            
-            transaction.update(projetoRef, {
-                gastos: gastos,
-                atualizado_em: new Date().toISOString()
-            });
-        });
-        
-        await carregarProjeto();
-        alert('✅ Excluído!');
-        
-    } catch (error) {
-        console.error('❌ Erro:', error);
-        alert('❌ Erro ao excluir');
-    }
-}
-
-// Utils
+// Formatar moeda
 function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return 'R$ ' + valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-function formatarData(data) {
-    const d = new Date(data + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR');
-}
-
-// Events
+// Fechar modal ao clicar fora
 window.addEventListener('click', function(e) {
-    if (e.target.id === 'modal-novo-gasto') {
+    var modal = document.getElementById('modal-novo-gasto');
+    if (e.target === modal) {
         fecharModalNovoGasto();
     }
 });
 
-console.log('✅ TESTE: arquivo completo');
+console.log('custos.js carregado');
