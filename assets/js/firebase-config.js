@@ -9,9 +9,14 @@ const firebaseConfig = {
     measurementId: "G-S07Q5EFB0T"
 };
 
-// Inicializar Firebase
+// Inicializar Firebase com compat
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Exportar para uso global
 window.db = db;
+window.firebase = firebase;
+
+console.log('Firebase inicializado com sucesso');
+console.log('db disponível:', typeof db);
+console.log('firebase disponível:', typeof firebase);
