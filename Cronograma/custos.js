@@ -178,4 +178,5 @@ window.addEventListener('click', function(e) {
     }
 });
 
+
 console.log('custos.js carregado');

@@ -1134,6 +1134,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         await carregarDadosProjeto();
         await atualizarInfoObra();
         carregarAdminView();
+    document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Inicializando aplicação com Drag & Drop...');
+    
+    adicionarEstilosDragDrop();
+    
+    try {
+        await carregarDadosProjeto();
+        await atualizarInfoObra();
+        carregarAdminView();
+        
+        // CONFIGURAR LINK DE CUSTOS
+        const linkCustos = document.getElementById('link-custos');
+        if (linkCustos) {
+            linkCustos.href = `custos.html?projeto=${PROJETO_ATUAL}`;
+            console.log('✅ Link custos:', linkCustos.href);
+        }
+        
+        console.log('✅ Aplicação inicializada com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+        alert('Erro ao carregar dados. Verifique a conexão e recarregue a página.');
+    }
+});
         
         console.log('✅ Aplicação inicializada com sucesso');
         
@@ -1243,6 +1267,44 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
         console.error('❌ Erro ao lançar custos:', error);
         alert('❌ Erro ao lançar custos');
     }
+    // --- NAVEGAÇÃO ENTRE ABAS ---
+function configurarNavegacao() {
+    const btnCronograma = document.getElementById('btn-cronograma');
+    const btnCustos = document.getElementById('btn-custos');
+    
+    if (btnCronograma) {
+        btnCronograma.addEventListener('click', function() {
+            window.location.href = `cronograma.html?projeto=${PROJETO_ATUAL}`;
+        });
+    }
+    
+    if (btnCustos) {
+        btnCustos.addEventListener('click', function() {
+            window.location.href = `custos.html?projeto=${PROJETO_ATUAL}`;
+        });
+    }
+    
+    console.log('✅ Navegação configurada');
+}
+
+// Chamar configuração de navegação
+configurarNavegacao();
+});
+// --- CONFIGURAR LINK PARA CUSTOS ---
+function configurarLinkCustos() {
+    const linkCustos = document.querySelector('a[href="../Cronograma/custos.html"]');
+    
+    if (linkCustos) {
+        linkCustos.href = `custos.html?projeto=${PROJETO_ATUAL}`;
+        console.log('✅ Link de custos configurado:', linkCustos.href);
+    } else {
+        console.warn('⚠️ Link de custos não encontrado');
+    }
+}
+
+// Chamar após carregar dados
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(configurarLinkCustos, 1000);
 });
 
 console.log('✅ Script com Drag & Drop carregado completamente');
