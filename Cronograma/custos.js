@@ -1,3 +1,5 @@
+console.log('✅ custos.js carregado com sucesso');
+
 // ========== VARIÁVEIS GLOBAIS ==========
 let projetoId = null;
 let projetoAtual = null;
@@ -6,6 +8,8 @@ let chartCategorias = null;
 // ========== INICIALIZAÇÃO ==========
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        console.log('🚀 Inicializando página de custos...');
+        
         // Obter ID do projeto da URL
         const urlParams = new URLSearchParams(window.location.search);
         projetoId = urlParams.get('projeto');
@@ -16,14 +20,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
+        console.log('📋 Projeto ID:', projetoId);
+        
         // Carregar dados do projeto
         await carregarProjeto();
         
         // Definir data atual no campo de data
-        document.getElementById('data-lancamento').valueAsDate = new Date();
+        const dataInput = document.getElementById('data-lancamento');
+        if (dataInput) {
+            dataInput.valueAsDate = new Date();
+        }
+        
+        console.log('✅ Página de custos inicializada');
         
     } catch (error) {
-        console.error('Erro ao inicializar:', error);
+        console.error('❌ Erro ao inicializar:', error);
         alert('Erro ao carregar dados do projeto');
     }
 });
@@ -31,6 +42,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ========== CARREGAR PROJETO ==========
 async function carregarProjeto() {
     try {
+        console.log('📂 Carregando projeto:', projetoId);
+        
         const doc = await db.collection('projetos').doc(projetoId).get();
         
         if (!doc.exists) {
@@ -40,9 +53,12 @@ async function carregarProjeto() {
         }
         
         projetoAtual = doc.data();
+        console.log('✅ Projeto carregado:', projetoAtual);
         
         // Atualizar nome do projeto
-        document.getElementById('nome-projeto').textContent = projetoAtual.info_projeto.nome_obra;
+        const nomeEl = document.getElementById('nome-projeto');
+        if (nomeEl) {
+        }
         
         // Atualizar cards resumo
         atualizarCardsResumo();
@@ -57,7 +73,7 @@ async function carregarProjeto() {
         atualizarHistorico();
         
     } catch (error) {
-        console.error('Erro ao carregar projeto:', error);
+        console.error('❌ Erro ao carregar projeto:', error);
         throw error;
     }
 }
@@ -69,18 +85,20 @@ function atualizarCardsResumo() {
     const saldoRestante = orcamento - totalGasto;
     const percentualGasto = orcamento > 0 ? (totalGasto / orcamento) * 100 : 0;
     
-    document.getElementById('orcamento-total').textContent = formatarMoeda(orcamento);
-    document.getElementById('total-gasto').textContent = formatarMoeda(totalGasto);
-    document.getElementById('saldo-restante').textContent = formatarMoeda(saldoRestante);
-    document.getElementById('percentual-gasto').textContent = percentualGasto.toFixed(1) + '%';
+    const orcamentoEl = document.getElementById('orcamento-total');
+    const gastoEl = document.getElementById('total-gasto');
+    const saldoEl = document.getElementById('saldo-restante');
+    const percentualEl = document.getElementById('percentual-gasto');
     
-    // Adicionar classe de alerta se ultrapassar orçamento
-    const cardSaldo = document.getElementById('saldo-restante');
-    if (saldoRestante < 0) {
-        cardSaldo.style.color = '#c62828';
-    } else {
-        cardSaldo.style.color = '#333';
+    if (orcamentoEl) orcamentoEl.textContent = formatarMoeda(orcamento);
+    if (gastoEl) gastoEl.textContent = formatarMoeda(totalGasto);
+    if (saldoEl) {
+        saldoEl.textContent = formatarMoeda(saldoRestante);
+        saldoEl.style.color = saldoRestante < 0 ? '#c62828' : '#333';
     }
+    if (percentualEl) percentualEl.textContent = percentualGasto.toFixed(1) + '%';
+    
+    console.log('✅ Cards resumo atualizados');
 }
 
 function calcularTotalGasto(gastos) {
@@ -96,7 +114,7 @@ function atualizarGraficoCategorias() {
     const dados = {
         labels: ['Material', 'Mão de Obra', 'Equipamentos', 'Serviços Terceiros'],
         datasets: [{
-            label: 'Gastos por Categoria (R$)',
+            label: 'Gastos por Categoria',
             data: [
             ],
             backgroundColor: [
@@ -134,11 +152,7 @@ function atualizarGraficoCategorias() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            if (label) {
-                                label += ': ';
-                            }
-                            label += formatarMoeda(context.parsed);
-                            return label;
+                            return context.label + ': ' + formatarMoeda(value);
                         }
                     }
                 }
@@ -151,8 +165,11 @@ function atualizarGraficoCategorias() {
         chartCategorias.destroy();
     }
     
-    const ctx = document.getElementById('chart-categorias').getContext('2d');
-    chartCategorias = new Chart(ctx, config);
+    const ctx = document.getElementById('chart-categorias');
+    if (ctx) {
+        chartCategorias = new Chart(ctx.getContext('2d'), config);
+        console.log('✅ Gráfico criado');
+    }
 }
 
 // ========== ATUALIZAR CATEGORIAS ==========
@@ -188,6 +205,8 @@ function atualizarCategorias() {
     ];
     
     const grid = document.getElementById('categorias-grid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
     
     categorias.forEach(cat => {
@@ -240,11 +259,15 @@ function atualizarCategorias() {
         
         grid.appendChild(card);
     });
+    
+    console.log('✅ Categorias atualizadas');
 }
 
 // ========== ATUALIZAR HISTÓRICO ==========
 function atualizarHistorico() {
     const tbody = document.getElementById('historico-tbody');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
     
     // Coletar todos os lançamentos
@@ -295,6 +318,8 @@ function atualizarHistorico() {
         
         tbody.appendChild(tr);
     });
+    
+    console.log(`✅ Histórico atualizado: ${todosLancamentos.length} lançamentos`);
 }
 
 function getCategoriaClass(categoria) {
@@ -324,18 +349,11 @@ function abrirModalNovoGasto() {
         
         if (!modal) {
             console.error('❌ Modal não encontrado!');
-            alert('Erro: Modal não encontrado. Verifique se o HTML foi carregado corretamente.');
+            alert('Erro: Modal não encontrado');
             return;
         }
         
-        console.log('✅ Modal encontrado:', modal);
-        
-        // Forçar display
         modal.style.display = 'block';
-        modal.style.opacity = '1';
-        modal.style.visibility = 'visible';
-        
-        // Bloquear scroll do body
         document.body.style.overflow = 'hidden';
         
         // Garantir que a data está preenchida
@@ -344,18 +362,30 @@ function abrirModalNovoGasto() {
             dataInput.valueAsDate = new Date();
         }
         
-        console.log('✅ Modal aberto com sucesso!');
+        console.log('✅ Modal aberto');
         
     } catch (error) {
         console.error('❌ Erro ao abrir modal:', error);
         alert('Erro ao abrir modal: ' + error.message);
     }
 }
+
 function fecharModalNovoGasto() {
-    document.getElementById('modal-novo-gasto').style.display = 'none';
+    const modal = document.getElementById('modal-novo-gasto');
+    if (modal) {
+        modal.style.display = 'none';
+    }
     document.body.style.overflow = 'auto';
-    document.getElementById('form-novo-gasto').reset();
-    document.getElementById('data-lancamento').valueAsDate = new Date();
+    
+    const form = document.getElementById('form-novo-gasto');
+    if (form) {
+        form.reset();
+    }
+    
+    const dataInput = document.getElementById('data-lancamento');
+    if (dataInput) {
+        dataInput.valueAsDate = new Date();
+    }
 }
 
 // ========== SALVAR NOVO GASTO ==========
@@ -363,6 +393,8 @@ async function salvarNovoGasto(event) {
     event.preventDefault();
     
     try {
+        console.log('💾 Salvando novo gasto...');
+        
         const formData = new FormData(event.target);
         const dados = Object.fromEntries(formData);
         
@@ -377,6 +409,9 @@ async function salvarNovoGasto(event) {
         };
         
         const categoria = dados.categoria;
+        
+        console.log('📋 Novo lançamento:', novoLancamento);
+        console.log('📂 Categoria:', categoria);
         
         // Atualizar Firebase
         const projetoRef = db.collection('projetos').doc(projetoId);
@@ -397,6 +432,10 @@ async function salvarNovoGasto(event) {
                 };
             }
             
+            if (!gastos[categoria].historico) {
+                gastos[categoria].historico = [];
+            }
+            
             // Adicionar lançamento ao histórico
             gastos[categoria].historico.push(novoLancamento);
             
@@ -409,6 +448,8 @@ async function salvarNovoGasto(event) {
             });
         });
         
+        console.log('✅ Lançamento salvo no Firebase');
+        
         // Recarregar projeto
         await carregarProjeto();
         
@@ -418,7 +459,7 @@ async function salvarNovoGasto(event) {
         alert('✅ Lançamento salvo com sucesso!');
         
     } catch (error) {
-        console.error('Erro ao salvar lançamento:', error);
+        console.error('❌ Erro ao salvar lançamento:', error);
         alert('❌ Erro ao salvar lançamento. Tente novamente.');
     }
 }
@@ -430,6 +471,8 @@ async function excluirLancamento(categoria, lancamentoId) {
     }
     
     try {
+        console.log('🗑️ Excluindo lançamento...', categoria, lancamentoId);
+        
         const projetoRef = db.collection('projetos').doc(projetoId);
         
         await db.runTransaction(async (transaction) => {
@@ -466,24 +509,32 @@ async function excluirLancamento(categoria, lancamentoId) {
             });
         });
         
+        console.log('✅ Lançamento excluído');
+        
         // Recarregar projeto
         await carregarProjeto();
         
         alert('✅ Lançamento excluído com sucesso!');
         
     } catch (error) {
-        console.error('Erro ao excluir lançamento:', error);
+        console.error('❌ Erro ao excluir lançamento:', error);
         alert('❌ Erro ao excluir lançamento. Tente novamente.');
     }
 }
 
+// ========== EDITAR LANÇAMENTO ==========
+function editarLancamento(categoria, lancamentoId) {
+    // TODO: Implementar edição
+    alert('🚧 Função de edição em desenvolvimento');
+}
+
 // ========== FILTRAR HISTÓRICO ==========
 function filtrarHistorico() {
-    const categoriaFiltro = document.getElementById('filtro-categoria').value;
-    const periodoFiltro = document.getElementById('filtro-periodo').value;
+    const categoriaFiltro = document.getElementById('filtro-categoria')?.value;
+    const periodoFiltro = document.getElementById('filtro-periodo')?.value;
     
     // TODO: Implementar filtros
-    console.log('Filtrar:', categoriaFiltro, periodoFiltro);
+    console.log('🔍 Filtrar:', categoriaFiltro, periodoFiltro);
 }
 
 // ========== UTILITÁRIOS ==========
@@ -503,9 +554,12 @@ function formatarData(data) {
     return date.toLocaleDateString('pt-BR');
 }
 
+// ========== EVENT LISTENERS ==========
+
 // Fechar modal ao clicar fora
-document.getElementById('modal-novo-gasto')?.addEventListener('click', function(e) {
-    if (e.target === this) {
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('modal-novo-gasto');
+    if (e.target === modal) {
         fecharModalNovoGasto();
     }
 });
@@ -516,3 +570,5 @@ document.addEventListener('keydown', function(e) {
         fecharModalNovoGasto();
     }
 });
+
+console.log('✅ custos.js carregado completamente');
