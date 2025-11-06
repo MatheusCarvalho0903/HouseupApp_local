@@ -47,18 +47,31 @@ function carregarProjeto() {
 
 // Atualizar cards
 function atualizarCards() {
+    console.log('Atualizando cards...');
+    
+    if (!projetoAtual) {
+        console.error('projetoAtual não está definido');
+        return;
+    }
+    
     
     var totalMaterial = 0;
     var totalMaoObra = 0;
     
-    if (gastos.material) {
+    if (gastos.material && gastos.material.total_realizado) {
+        totalMaterial = gastos.material.total_realizado;
     }
     
-    if (gastos.mao_de_obra) {
+    if (gastos.mao_de_obra && gastos.mao_de_obra.total_realizado) {
+        totalMaoObra = gastos.mao_de_obra.total_realizado;
     }
     
     var totalGasto = totalMaterial + totalMaoObra;
     var saldo = orcamentoTotal - totalGasto;
+    
+    console.log('Total Material:', totalMaterial);
+    console.log('Total Mão de Obra:', totalMaoObra);
+    console.log('Total Gasto:', totalGasto);
     
     var elemOrcamento = document.getElementById('orcamento-total');
     var elemGasto = document.getElementById('total-gasto');
@@ -76,15 +89,22 @@ function atualizarCards() {
         elemSaldo.textContent = formatarMoeda(saldo);
     }
     
-    console.log('Cards atualizados');
+    console.log('Cards atualizados com sucesso');
 }
 
 // Atualizar histórico
 function atualizarHistorico() {
+    console.log('Atualizando histórico...');
+    
     var tbody = document.getElementById('historico-tbody');
     
     if (!tbody) {
         console.log('Tabela não encontrada');
+        return;
+    }
+    
+    if (!projetoAtual) {
+        console.error('projetoAtual não está definido');
         return;
     }
     
@@ -142,7 +162,7 @@ function atualizarHistorico() {
         tbody.appendChild(tr);
     }
     
-    console.log('Histórico atualizado');
+    console.log('Histórico atualizado com sucesso');
 }
 
 // Abrir modal
@@ -167,6 +187,8 @@ function fecharModalNovoGasto() {
 
 // Formatar moeda
 function formatarMoeda(valor) {
+        valor = 0;
+    }
     return 'R$ ' + valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
@@ -177,6 +199,5 @@ window.addEventListener('click', function(e) {
         fecharModalNovoGasto();
     }
 });
-
 
 console.log('custos.js carregado');
