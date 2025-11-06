@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Custos - HouseUp</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/custos.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="../home.html">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 id="nome-projeto">Carregando...</h1>
+                </div>
+                <div class="user-info">
+                    <span>Gestão de Custos</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <a href="index.html" class="tab-link">
+                <i class="fas fa-calendar-alt"></i> Cronograma
+            </a>
+            <a href="custos.html" class="tab-link active">
+                <i class="fas fa-dollar-sign"></i> Custos
+            </a>
+            <a href="#" class="tab-link">
+                <i class="fas fa-camera"></i> Diário
+            </a>
+            <a href="#" class="tab-link">
+                <i class="fas fa-file-alt"></i> Documentos
+            </a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Cards Resumo -->
+            <div class="cards-resumo">
+                <div class="card-resumo card-orcamento">
+                    <div class="card-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Orçamento Total</span>
+                        <span class="card-value" id="orcamento-total">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="card-resumo card-gasto">
+                    <div class="card-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Total Gasto</span>
+                        <span class="card-value" id="total-gasto">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="card-resumo card-saldo">
+                    <div class="card-icon">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Saldo Restante</span>
+                        <span class="card-value" id="saldo-restante">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="card-resumo card-percentual">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">% Utilizado</span>
+                        <span class="card-value" id="percentual-gasto">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Gastos por Categoria -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Gastos por Categoria</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-categorias"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabela de Categorias -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list"></i> Detalhamento por Categoria</h2>
+                    <button class="btn btn-primary" onclick="abrirModalNovoGasto()">
+                        <i class="fas fa-plus"></i> Novo Lançamento
+                    </button>
+                </div>
+                
+                <div class="categorias-grid" id="categorias-grid">
+                    <!-- Categorias serão carregadas aqui -->
+                </div>
+            </div>
+
+            <!-- Histórico de Lançamentos -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Histórico de Lançamentos</h2>
+                    <div class="filtros">
+                        <select id="filtro-categoria" onchange="filtrarHistorico()">
+                            <option value="">Todas Categorias</option>
+                            <option value="material">Material</option>
+                            <option value="mao_de_obra">Mão de Obra</option>
+                            <option value="equipamentos">Equipamentos</option>
+                            <option value="servicos_terceiros">Serviços Terceiros</option>
+                        </select>
+                        <select id="filtro-periodo" onchange="filtrarHistorico()">
+                            <option value="todos">Todos os Períodos</option>
+                            <option value="mes-atual">Mês Atual</option>
+                            <option value="mes-anterior">Mês Anterior</option>
+                            <option value="ultimos-3-meses">Últimos 3 Meses</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="table-historico">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>Fornecedor</th>
+                                <th class="text-right">Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historico-tbody">
+                            <!-- Histórico será carregado aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Novo Lançamento -->
+    <div class="modal" id="modal-novo-gasto">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Novo Lançamento de Custo</h3>
+                <button class="modal-close" onclick="fecharModalNovoGasto()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="form-novo-gasto" onsubmit="salvarNovoGasto(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="data-lancamento">Data *</label>
+                            <input type="date" id="data-lancamento" name="data-lancamento" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="categoria">Categoria *</label>
+                            <select id="categoria" name="categoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="material">Material</option>
+                                <option value="mao_de_obra">Mão de Obra</option>
+                                <option value="equipamentos">Equipamentos</option>
+                                <option value="servicos_terceiros">Serviços Terceiros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descricao">Descrição *</label>
+                        <input type="text" id="descricao" name="descricao" required 
+                               placeholder="Ex: Compra de cimento, Pedreiro - 1ª quinzena">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fornecedor">Fornecedor/Responsável</label>
+                            <input type="text" id="fornecedor" name="fornecedor" 
+                                   placeholder="Ex: Casa do Construtor, João Pedreiro">
+                        </div>
+                        <div class="form-group">
+                            <label for="valor">Valor (R$) *</label>
+                            <input type="number" id="valor" name="valor" required 
+                                   placeholder="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forma-pagamento">Forma de Pagamento</label>
+                        <select id="forma-pagamento" name="forma-pagamento">
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">PIX</option>
+                            <option value="transferencia">Transferência</option>
+                            <option value="cartao-credito">Cartão de Crédito</option>
+                            <option value="cartao-debito">Cartão de Débito</option>
+                            <option value="boleto">Boleto</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observacoes">Observações</label>
+                        <textarea id="observacoes" name="observacoes" rows="3" 
+                                  placeholder="Informações adicionais sobre este lançamento"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalNovoGasto()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Lançamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="custos.js"></script>
+</body>
+</html>
