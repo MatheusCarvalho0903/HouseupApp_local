@@ -1,4 +1,3 @@
-
 console.log('🚀 Iniciando cronograma com Drag & Drop...');
 
 // --- CONFIGURAÇÃO FIREBASE ---
@@ -876,7 +875,6 @@ async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProg
     await salvarDados();
     carregarAdminView();
 }
-
 async function atualizarStatusSubAtividade(atividadeIndex, subIndex, novoStatus) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
@@ -884,19 +882,17 @@ async function atualizarStatusSubAtividade(atividadeIndex, subIndex, novoStatus)
     atividade.sub_atividades[subIndex].status = novoStatus;
     await salvarDados();
 }
-
 async function atualizarPesoSubAtividade(atividadeIndex, subIndex, novoPeso) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
-    
+
     const pesoValidado = validarProgresso(novoPeso);
     atividade.sub_atividades[subIndex].peso_local = pesoValidado;
-    
+
     const validacao = validarPesoLocalSubAtividades(atividade);
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!\n\nAjuste os pesos das sub-atividades.`);
-    }
-    
+
     await salvarDados();
     carregarAdminView();
 }
@@ -1311,6 +1307,7 @@ console.log('✅ Script com Drag & Drop carregado completamente');
 // ============================================
 // FUNÇÃO PARA PASSAR PROJETO ENTRE ABAS
 // ============================================
+
 
 function obterProjetoIdDaUrl() {
     const params = new URLSearchParams(window.location.search);
