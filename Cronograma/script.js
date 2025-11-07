@@ -1135,20 +1135,40 @@ function carregarAdminView() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando aplicação com Drag & Drop...');
     
+    // Adicionar estilos CSS para drag & drop
     adicionarEstilosDragDrop();
-    
-    // CONFIGURAR LINK DE CUSTOS AQUI
-    const linkCustos = document.getElementById('link-custos');
-    if (linkCustos) {
-        linkCustos.href = `custos.html?projeto=${projetoId}`;
-        console.log('✅ Link custos configurado:', linkCustos.href);
-    }
     
     try {
         await carregarDadosProjeto();
         await atualizarInfoObra();
         carregarAdminView();
+    document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Inicializando aplicação com Drag & Drop...');
+    
+    adicionarEstilosDragDrop();
+    
+    try {
+        await carregarDadosProjeto();
+        await atualizarInfoObra();
+        carregarAdminView();
+        
+        // CONFIGURAR LINK DE CUSTOS
+        const linkCustos = document.getElementById('link-custos');
+        if (linkCustos) {
+            linkCustos.href = `custos.html?projeto=${PROJETO_ATUAL}`;
+            console.log('✅ Link custos:', linkCustos.href);
+        }
+        
         console.log('✅ Aplicação inicializada com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+        alert('Erro ao carregar dados. Verifique a conexão e recarregue a página.');
+    }
+});
+        
+        console.log('✅ Aplicação inicializada com sucesso');
+        
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
         alert('Erro ao carregar dados. Verifique a conexão e recarregue a página.');
