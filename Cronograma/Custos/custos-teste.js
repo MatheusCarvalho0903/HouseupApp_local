@@ -93,7 +93,7 @@ function salvarNovoGasto(event) {
     // Validar valor
         alert('❌ Valor deve ser um número maior que zero!');
         return;
-    }
+    
     
     console.log('✅ Validação passou!');
     
@@ -171,5 +171,5 @@ function salvarNovoGasto(event) {
             console.error('❌ Erro ao salvar:', erro);
             alert(`❌ Erro ao salvar: ${erro.message}`);
         });
-}
+
 console.log('custos.js totalmente processado.');
