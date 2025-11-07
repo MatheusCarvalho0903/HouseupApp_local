@@ -863,7 +863,7 @@ async function atualizarPesoAtividade(index, novoPeso) {
 async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProgresso) {
     console.log(`📊 Atualizando sub-atividade [${atividadeIndex}][${subIndex}] para ${novoProgresso}%`);
     
-    const atividade = dadosObra.cronograma[atividadeIndex];
+    const atividade = dadosObra.cronograma[atividadeIndex];{
         console.error('❌ Sub-atividade não encontrada');
         return;
     }
