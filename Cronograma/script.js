@@ -1308,3 +1308,45 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('✅ Script com Drag & Drop carregado completamente');
+// ============================================
+// FUNÇÃO PARA PASSAR PROJETO ENTRE ABAS
+// ============================================
+
+function obterProjetoIdDaUrl() {
+    const params = new URLSearchParams(window.location.search);
+    let projetoId = params.get('projeto');
+    
+    // Se não encontrar na URL, tenta localStorage
+    if (!projetoId) {
+        projetoId = localStorage.getItem('projetoAtual');
+    }
+    
+    // Se ainda não encontrar, salva no localStorage
+    if (projetoId) {
+        localStorage.setItem('projetoAtual', projetoId);
+    }
+    
+    console.log('Projeto ID obtido:', projetoId);
+    return projetoId;
+}
+
+// Executar ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    const projetoId = obterProjetoIdDaUrl();
+    
+    if (!projetoId) {
+        console.warn('Projeto não encontrado!');
+        alert('Erro: Projeto não identificado');
+        window.location.href = '../home.html';
+        return;
+    }
+    
+    // Adicionar projeto a TODOS os links de abas
+    const links = document.querySelectorAll('.tab-link, [data-page]');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.includes('?projeto=') && !href.startsWith('#')) {
+            link.setAttribute('href', href + '?projeto=' + projetoId);
+        }
+    });
+});
