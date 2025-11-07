@@ -861,10 +861,15 @@ async function atualizarPesoAtividade(index, novoPeso) {
 }
 
 async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProgresso) {
+    console.log(`📊 Atualizando sub-atividade [${atividadeIndex}][${subIndex}] para ${novoProgresso}%`);
+    
     const atividade = dadosObra.cronograma[atividadeIndex];
-    if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
+        console.error('❌ Sub-atividade não encontrada');
+        return;
+    }
     
     const progressoValidado = validarProgresso(novoProgresso);
+    console.log('✅ Progresso validado:', progressoValidado);
     
     atividade.sub_atividades[subIndex].progresso_atividade = progressoValidado;
     atividade.sub_atividades[subIndex].status = getAutomatedStatus(progressoValidado);
@@ -873,7 +878,10 @@ async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProg
     atividade.progresso_atividade = novoProgressoPrincipal;
     atividade.status = getAutomatedStatus(novoProgressoPrincipal);
     
+    console.log('💾 Salvando dados...');
     await salvarDados();
+    
+    console.log('🔄 Recarregando...');
     carregarAdminView();
 }
 
