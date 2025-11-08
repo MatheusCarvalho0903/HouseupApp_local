@@ -121,8 +121,11 @@ function criarGrafico() {
     let equipamentos = 0;
     let servicos = 0;
     
-    if (dadosObra.gastos?.historico && Array.isArray(dadosObra.gastos.historico)) {
+    if (dadosObra.gastos && dadosObra.gastos.historico && Array.isArray(dadosObra.gastos.historico)) {
         dadosObra.gastos.historico.forEach(gasto => {
+            const categoria = gasto.categoria ? gasto.categoria.toString().toLowerCase() : '';
+            
+            console.log('   Gasto:', gasto.descricao, '-', valor, '-', categoria);
             
             if (categoria.includes('material')) {
                 material += valor;
