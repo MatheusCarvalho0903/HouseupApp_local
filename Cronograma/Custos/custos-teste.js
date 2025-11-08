@@ -1,9 +1,20 @@
 console.log('🚀 Script de Custos Carregado');
 
 // --- VARIÁVEIS GLOBAIS ---
+let PROJETO_ATUAL;
 let dadosObra = null;
 
-console.log('🏗️ Projeto:', PROJETO_ATUAL);
+// --- INICIALIZAR PROJETO ---
+function inicializarProjeto() {
+    PROJETO_ATUAL = localStorage.getItem('projetoAtual');
+    
+    if (!PROJETO_ATUAL) {
+        console.error('❌ Projeto não encontrado no localStorage');
+        PROJETO_ATUAL = 'angela-marco'; // fallback
+    }
+    
+    console.log('🏗️ Projeto:', PROJETO_ATUAL);
+}
 
 // --- CARREGAR DADOS DO FIREBASE ---
 async function carregarDados() {
@@ -39,6 +50,8 @@ function atualizarNomeProjeto() {
 // --- INICIALIZAR ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando...');
+    
+    inicializarProjeto();
     
     const ok = await carregarDados();
     
