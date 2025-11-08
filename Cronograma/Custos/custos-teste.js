@@ -24,6 +24,21 @@ async function carregarDados() {
             dadosObra = doc.data();
             console.log('✅ Dados carregados');
             console.log('   Nome:', dadosObra.info_projeto.nome_obra);
+            
+            // Buscar histórico de gastos do cronograma
+            const gastosDoc = await db.collection('projetos').doc(PROJETO_ATUAL).collection('gastos').doc('historico').get();
+            
+            if (gastosDoc.exists) {
+                const historico = gastosDoc.data();
+                console.log('📊 Histórico de gastos encontrado:', historico);
+                
+                // Armazenar no dadosObra para usar depois
+                dadosObra.gastos_historico = historico;
+            } else {
+                console.log('⚠️ Sem histórico de gastos');
+                dadosObra.gastos_historico = { historico: [] };
+            }
+            
             return true;
         }
     } catch (erro) {
@@ -59,26 +74,35 @@ function formatarMoeda(valor) {
 function calcularTotais() {
     let totalGasto = 0;
     
-    // Somar todos os custos
-    if (dadosObra.custos) {
-        Object.keys(dadosObra.custos).forEach(categoria => {
-            detalhes.forEach(custo => {
-            });
+    // Somar gastos do histórico do cronograma
+    if (dadosObra.gastos_historico?.historico) {
+        dadosObra.gastos_historico.historico.forEach(gasto => {
         });
+        console.log('💰 Gastos do cronograma:', totalGasto);
     }
     
+    // Pegar orçamento do Firebase
+    
+    console.log('💵 Orçamento:', orcamento);
+    
+    return { totalGasto, orcamento };
+}
+    
+    // Pegar orçamento do Firebase
+    
     console.log('💰 Total gasto:', totalGasto);
-    return totalGasto;
+    console.log('💵 Orçamento:', orcamento);
+    
+    return { totalGasto, orcamento };
 }
 
 // --- ATUALIZAR CARDS ---
 function atualizarCards() {
     console.log('🎨 Atualizando cards...');
     
-    const totalGasto = calcularTotais();
-    const orcamento = 100000; // Exemplo: R$ 100.000
+    const { totalGasto, orcamento } = calcularTotais();
     const saldo = orcamento - totalGasto;
-    const percentual = ((totalGasto / orcamento) * 100).toFixed(1);
+    const percentual = orcamento > 0 ? ((totalGasto / orcamento) * 100).toFixed(1) : 0;
     
     console.log('   Orçamento:', formatarMoeda(orcamento));
     console.log('   Gasto:', formatarMoeda(totalGasto));
