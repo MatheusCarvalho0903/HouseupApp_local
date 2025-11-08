@@ -45,10 +45,19 @@ async function carregarDados() {
 
 // --- ATUALIZAR NOME ---
 function atualizarNomeProjeto() {
+    if (!dadosObra) {
+        console.log('⚠️ dadosObra é null');
+        return;
+    }
+    
+    console.log('📝 Nome do projeto:', nomeProjeto);
+    
     const el = document.getElementById('nome-projeto');
     if (el) {
-        el.textContent = nome;
-        console.log('✅ Nome:', nome);
+        el.textContent = nomeProjeto;
+        console.log('✅ Nome atualizado:', nomeProjeto);
+    } else {
+        console.log('⚠️ Elemento #nome-projeto não encontrado');
     }
 }
 
