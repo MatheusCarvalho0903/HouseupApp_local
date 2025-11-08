@@ -6,14 +6,19 @@ let dadosObra = null;
 
 // --- INICIALIZAR PROJETO ---
 function inicializarProjeto() {
-    PROJETO_ATUAL = localStorage.getItem('projetoAtual');
+    // 1. Tentar pegar da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const projetoUrl = urlParams.get('projeto');
+    
+    // 2. Se não tiver na URL, pegar do localStorage
     
     if (!PROJETO_ATUAL) {
-        console.error('❌ Projeto não encontrado no localStorage');
+        console.error('❌ Projeto não encontrado');
         PROJETO_ATUAL = 'angela-marco'; // fallback
     }
     
     console.log('🏗️ Projeto:', PROJETO_ATUAL);
+    localStorage.setItem('projetoAtual', PROJETO_ATUAL); // Salvar para próximas vezes
 }
 
 // --- CARREGAR DADOS DO FIREBASE ---

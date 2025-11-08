@@ -1112,6 +1112,10 @@ function adicionarEstilosDragDrop() {
     `;
     document.head.appendChild(style);
 }
+function irParaCustos() {
+    const projeto = localStorage.getItem('projetoAtual');
+    window.location.href = `Custos/custos.html?projeto=${projeto}`;
+}
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', async () => {
