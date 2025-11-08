@@ -57,23 +57,32 @@ function calcularTotais() {
     let totalGasto = 0;
     
     // Somar gastos do histórico
-    if (dadosObra.gastos?.historico && Array.isArray(dadosObra.gastos.historico)) {
+    if (dadosObra.gastos && dadosObra.gastos.historico && Array.isArray(dadosObra.gastos.historico)) {
         dadosObra.gastos.historico.forEach(gasto => {
         });
         console.log('💰 Total do histórico:', totalGasto);
     }
     
     // Pegar orçamento
+    let orcamento = 0;
+    if (dadosObra.orcamento && dadosObra.orcamento.valor_total_previsto) {
+        orcamento = dadosObra.orcamento.valor_total_previsto;
+    }
     console.log('💵 Orçamento:', orcamento);
     
-    return { totalGasto, orcamento };
+    return {
+        totalGasto: totalGasto,
+        orcamento: orcamento
+    };
 }
 
 // --- ATUALIZAR CARDS ---
 function atualizarCards() {
     console.log('🎨 Atualizando cards...');
     
-    const { totalGasto, orcamento } = calcularTotais();
+    const totais = calcularTotais();
+    const totalGasto = totais.totalGasto;
+    const orcamento = totais.orcamento;
     const saldo = orcamento - totalGasto;
     const percentual = orcamento > 0 ? ((totalGasto / orcamento) * 100).toFixed(1) : 0;
     
@@ -97,7 +106,6 @@ function atualizarCards() {
         }
     });
 }
-
 // --- CRIAR GRÁFICO ---
 function criarGrafico() {
     console.log('📊 Criando gráfico...');
