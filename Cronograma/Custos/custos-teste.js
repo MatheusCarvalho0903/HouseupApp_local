@@ -44,20 +44,26 @@ async function carregarDados() {
 }
 
 // --- ATUALIZAR NOME ---
+// --- ATUALIZAR NOME ---
 function atualizarNomeProjeto() {
+    console.log('🔍 Atualizando nome...');
+    console.log('   dadosObra:', dadosObra);
+    
     if (!dadosObra) {
         console.log('⚠️ dadosObra é null');
         return;
     }
     
-    console.log('📝 Nome do projeto:', nomeProjeto);
+    console.log('📝 Nome:', nomeObra);
     
-    const el = document.getElementById('nome-projeto');
-    if (el) {
-        el.textContent = nomeProjeto;
-        console.log('✅ Nome atualizado:', nomeProjeto);
+    const elemento = document.getElementById('nome-projeto');
+    console.log('🔎 Elemento encontrado?', !!elemento);
+    
+    if (elemento) {
+        elemento.textContent = nomeObra;
+        console.log('✅ Nome atualizado no HTML');
     } else {
-        console.log('⚠️ Elemento #nome-projeto não encontrado');
+        console.log('⚠️ #nome-projeto não existe no HTML');
     }
 }
 
