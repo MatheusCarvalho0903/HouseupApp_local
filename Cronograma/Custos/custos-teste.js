@@ -30,7 +30,7 @@ async function carregarDados() {
             
             if (gastosDoc.exists) {
                 const historico = gastosDoc.data();
-                console.log('📊 Histórico de gastos encontrado:', historico);
+                console.log('📊 Histórico de gastos encontrado');
                 
                 // Armazenar no dadosObra para usar depois
                 dadosObra.gastos_historico = historico;
@@ -62,6 +62,7 @@ function atualizarNomeProjeto() {
         console.log('✅ Nome atualizado');
     }
 }
+
 // --- FORMATAR MOEDA ---
 function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { 
@@ -83,14 +84,6 @@ function calcularTotais() {
     
     // Pegar orçamento do Firebase
     
-    console.log('💵 Orçamento:', orcamento);
-    
-    return { totalGasto, orcamento };
-}
-    
-    // Pegar orçamento do Firebase
-    
-    console.log('💰 Total gasto:', totalGasto);
     console.log('💵 Orçamento:', orcamento);
     
     return { totalGasto, orcamento };
@@ -126,6 +119,75 @@ function atualizarCards() {
     });
 }
 
+// --- CRIAR GRÁFICO ---
+function criarGrafico() {
+    console.log('📊 Criando gráfico...');
+    
+    const ctx = document.getElementById('chart-categorias');
+    if (!ctx) {
+        console.log('⚠️ Elemento chart-categorias não encontrado');
+        return;
+    }
+    
+    // Pegar dados de cada categoria do histórico
+    let material = 0;
+    let maoObra = 0;
+    let equipamentos = 0;
+    let servicos = 0;
+    
+    if (dadosObra.gastos_historico?.historico) {
+        dadosObra.gastos_historico.historico.forEach(gasto => {
+            
+            if (categoria.includes('material')) {
+                material += valor;
+                maoObra += valor;
+            } else if (categoria.includes('equipament')) {
+                equipamentos += valor;
+                servicos += valor;
+            }
+        });
+    }
+    
+    console.log('   Material:', formatarMoeda(material));
+    console.log('   Mão de Obra:', formatarMoeda(maoObra));
+    console.log('   Equipamentos:', formatarMoeda(equipamentos));
+    console.log('   Serviços:', formatarMoeda(servicos));
+    
+    // Criar gráfico
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Material', 'Mão de Obra', 'Equipamentos', 'Serviços Terceiros'],
+            datasets: [{
+                data: [material, maoObra, equipamentos, servicos],
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#f5576c'
+                ],
+                borderColor: '#fff',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: { size: 12 }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Gráfico criado');
+}
+
 // --- INICIALIZAR ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando...');
@@ -135,7 +197,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (ok && dadosObra) {
         atualizarNomeProjeto();
-        atualizarCards();  // 🆕 ADICIONE ESTA LINHA
+        atualizarCards();
+        criarGrafico();
         console.log('✅ Pronto!');
     }
 });
