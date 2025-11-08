@@ -47,6 +47,60 @@ function atualizarNomeProjeto() {
         console.log('✅ Nome atualizado');
     }
 }
+// --- FORMATAR MOEDA ---
+function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+    });
+}
+
+// --- CALCULAR TOTAIS ---
+function calcularTotais() {
+    let totalGasto = 0;
+    
+    // Somar todos os custos
+    if (dadosObra.custos) {
+        Object.keys(dadosObra.custos).forEach(categoria => {
+            detalhes.forEach(custo => {
+            });
+        });
+    }
+    
+    console.log('💰 Total gasto:', totalGasto);
+    return totalGasto;
+}
+
+// --- ATUALIZAR CARDS ---
+function atualizarCards() {
+    console.log('🎨 Atualizando cards...');
+    
+    const totalGasto = calcularTotais();
+    const orcamento = 100000; // Exemplo: R$ 100.000
+    const saldo = orcamento - totalGasto;
+    const percentual = ((totalGasto / orcamento) * 100).toFixed(1);
+    
+    console.log('   Orçamento:', formatarMoeda(orcamento));
+    console.log('   Gasto:', formatarMoeda(totalGasto));
+    console.log('   Saldo:', formatarMoeda(saldo));
+    console.log('   Percentual:', percentual + '%');
+    
+    // Atualizar elementos
+    const els = {
+        'orcamento-total': formatarMoeda(orcamento),
+        'total-gasto': formatarMoeda(totalGasto),
+        'saldo-restante': formatarMoeda(saldo),
+        'percentual-gasto': percentual + '%'
+    };
+    
+    Object.keys(els).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = els[id];
+            console.log(`   ✅ ${id} atualizado`);
+        }
+    });
+}
 
 // --- INICIALIZAR ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -57,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (ok && dadosObra) {
         atualizarNomeProjeto();
+        atualizarCards();  // 🆕 ADICIONE ESTA LINHA
         console.log('✅ Pronto!');
     }
 });
