@@ -1,27 +1,19 @@
 console.log('🚀 Script de Custos Carregado');
 
 // --- VARIÁVEIS GLOBAIS ---
-let PROJETO_ATUAL;
+let PROJETO_ATUAL = 'angela-marco';
 let dadosObra = null;
 
 // --- INICIALIZAR PROJETO ---
 function inicializarProjeto() {
-    // 1. Tentar pegar da URL
     const urlParams = new URLSearchParams(window.location.search);
     const projetoUrl = urlParams.get('projeto');
     
-    // 2. Se não tiver na URL, pegar do localStorage
-    
-    if (!PROJETO_ATUAL) {
-        console.error('❌ Projeto não encontrado');
-        PROJETO_ATUAL = 'angela-marco'; // fallback
-    }
     
     console.log('🏗️ Projeto:', PROJETO_ATUAL);
-    localStorage.setItem('projetoAtual', PROJETO_ATUAL); // Salvar para próximas vezes
 }
 
-// --- CARREGAR DADOS DO FIREBASE ---
+// --- CARREGAR DADOS ---
 async function carregarDados() {
     try {
         console.log('📂 Carregando dados...');
@@ -31,39 +23,28 @@ async function carregarDados() {
         if (doc.exists) {
             dadosObra = doc.data();
             console.log('✅ Dados carregados');
-            console.log('   Nome:', dadosObra.info_projeto?.nome_obra);
+            console.log('   Nome:', dadosObra.info_projeto.nome_obra);
             return true;
-        } else {
-            console.log('⚠️ Documento não encontrado');
-            return false;
         }
     } catch (erro) {
         console.error('❌ Erro:', erro);
-        return false;
     }
+    return false;
 }
 
 // --- ATUALIZAR NOME ---
-// --- ATUALIZAR NOME ---
 function atualizarNomeProjeto() {
-    console.log('🔍 Atualizando nome...');
-    console.log('   dadosObra:', dadosObra);
+    console.log('📝 Atualizando nome...');
     
-    if (!dadosObra) {
-        console.log('⚠️ dadosObra é null');
-        return;
-    }
+    const el = document.getElementById('nome-projeto');
+    const txt = dadosObra.info_projeto.nome_obra;
     
-    console.log('📝 Nome:', nomeObra);
+    console.log('   Elemento:', el);
+    console.log('   Texto:', txt);
     
-    const elemento = document.getElementById('nome-projeto');
-    console.log('🔎 Elemento encontrado?', !!elemento);
-    
-    if (elemento) {
-        elemento.textContent = nomeObra;
-        console.log('✅ Nome atualizado no HTML');
-    } else {
-        console.log('⚠️ #nome-projeto não existe no HTML');
+    if (el) {
+        el.textContent = txt;
+        console.log('✅ Nome atualizado');
     }
 }
 
@@ -72,10 +53,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando...');
     
     inicializarProjeto();
-    
     const ok = await carregarDados();
     
-    if (ok) {
+    if (ok && dadosObra) {
         atualizarNomeProjeto();
         console.log('✅ Pronto!');
     }
