@@ -196,7 +196,7 @@ function criarCardProjeto(id, projeto) {
 function calcularGastoTotal(gastos) {
     let total = 0;
     if (gastos) {
-        total += gastos.historico?.total_realizado || 0;
+        total += gastos.historico?.valor || 0;
         total += gastos.mao_de_obra?.total_realizado || 0;
         total += gastos.equipamentos?.total_realizado || 0;
         total += gastos.servicos_terceiros?.total_realizado || 0;
