@@ -1,3 +1,4 @@
+// admin/script.js - VERSÃO INTEGRADA COM SINCRONIZAÇÃO DE CUSTOS
 
 console.log('🚀 Iniciando cronograma...');
 
@@ -42,7 +43,7 @@ let dadosObra = {
     },
     info_projeto: {}
 };
-// Variáveis para controle do drag & drop
+
 let sortableInstances = [];
 
 // --- CRONOGRAMAS PADRÃO ---
@@ -93,7 +94,6 @@ async function carregarDadosProjeto() {
             dadosObra = doc.data();
             console.log('✅ Dados carregados:', dadosObra);
             
-            // Garantir estrutura mínima
             if (!dadosObra.cronograma) dadosObra.cronograma = [];
             if (!dadosObra.gastos) {
                 dadosObra.gastos = {
@@ -102,7 +102,6 @@ async function carregarDadosProjeto() {
                 };
             }
             
-            // LOG DETALHADO DO CRONOGRAMA
             console.log(`📊 Cronograma carregado: ${dadosObra.cronograma.length} atividades`);
             dadosObra.cronograma.forEach((atividade, index) => {
                 console.log(`  ${index + 1}. ${atividade.descricao}`);
@@ -167,17 +166,15 @@ async function atualizarInfoObra() {
     }
 }
 
-// --- FUNÇÕES UTILITÁRIAS MELHORADAS ---
+// --- FUNÇÕES UTILITÁRIAS ---
 function getAutomatedStatus(progressValue) {
     if (progressValue === 0) return "Não Iniciada";
     if (progressValue === 100) return "Concluída";
     return "Em Andamento";
 }
 
-// FUNÇÃO PARA CALCULAR PROGRESSO DA ATIVIDADE PRINCIPAL A PARTIR DAS SUB-ATIVIDADES
 function calcularProgressoPrincipalPorSubAtividades(atividade) {
     if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
-        // Se não tem sub-atividades, usa o progresso manual
         return parseFloat(atividade.progresso_atividade) || 0;
     }
     
@@ -198,7 +195,6 @@ function calcularProgressoPrincipalPorSubAtividades(atividade) {
     return parseFloat(progressoCalculado.toFixed(2));
 }
 
-// FUNÇÃO PARA CALCULAR PROGRESSO GLOBAL DO PROJETO
 function calcularProgressoGlobal() {
     if (!dadosObra.cronograma || dadosObra.cronograma.length === 0) return 0;
     
@@ -219,7 +215,6 @@ function calcularProgressoGlobal() {
     return parseFloat(progressoGlobal.toFixed(2));
 }
 
-// FUNÇÃO PARA VALIDAR PROGRESSO (0-100%)
 function validarProgresso(valor) {
     const num = parseFloat(valor);
     if (isNaN(num)) return 0;
@@ -228,7 +223,6 @@ function validarProgresso(valor) {
     return parseFloat(num.toFixed(2));
 }
 
-// FUNÇÃO PARA VALIDAR PESO GLOBAL TOTAL
 function validarPesoGlobalTotal() {
     let pesoTotal = 0;
     dadosObra.cronograma.forEach(atividade => {
@@ -241,7 +235,6 @@ function validarPesoGlobalTotal() {
     };
 }
 
-// FUNÇÃO PARA VALIDAR PESO LOCAL DAS SUB-ATIVIDADES
 function validarPesoLocalSubAtividades(atividade) {
     if (!atividade.sub_atividades || atividade.sub_atividades.length === 0) {
         return { total: 0, excede: false };
@@ -281,6 +274,9 @@ async function salvarDados() {
             ultima_atualizacao: new Date().toISOString()
         });
         
+        // 🆕 SINCRONIZAR CUSTOS GLOBAIS PARA O INDEX
+        await sincronizarCustosGlobais();
+        
         console.log('✅ Dados salvos com sucesso');
         return true;
         
@@ -290,8 +286,47 @@ async function salvarDados() {
     }
 }
 
+// --- 🆕 SINCRONIZAR CUSTOS GLOBAIS ---
+async function sincronizarCustosGlobais() {
+    try {
+        // Calcular totais por categoria
+        const historico = dadosObra.gastos?.historico || [];
+        
+        const totaisPorCategoria = {
+            'Material': 0,
+            'Mão de Obra': 0,
+            'Equipamento': 0,
+            'Serviços': 0,
+            'Despesas Gerais': 0
+        };
+        
+        historico.forEach(lancamento => {
+            const categoria = lancamento.categoria || 'Despesas Gerais';
+            if (totaisPorCategoria.hasOwnProperty(categoria)) {
+                totaisPorCategoria[categoria] += parseFloat(lancamento.valor) || 0;
+            }
+        });
+        
+        const totalGeral = Object.values(totaisPorCategoria).reduce((a, b) => a + b, 0);
+        
+        // Salvar resumo global na raiz do projeto
+        await dadosObraRef.update({
+            'custos_resumo': {
+                ...totaisPorCategoria,
+                'Total': totalGeral,
+                'ultima_atualizacao': new Date().toISOString()
+            }
+        });
+        
+        console.log('📊 Custos globais sincronizados:', totaisPorCategoria);
+        
+    } catch (error) {
+        console.error('⚠️ Aviso: Erro ao sincronizar custos globais:', error);
+        // Não falhar se não conseguir sincronizar
+    }
+}
+
 // --- CARREGAR CUSTOS ---
-// --- ESTRUTURA DE DADOS DE CUSTOS MELHORADA ---
 const CATEGORIAS_CUSTO = {
     'Material': { cor: '#ff9800', icone: 'fas fa-boxes' },
     'Mão de Obra': { cor: '#2196f3', icone: 'fas fa-hard-hat' },
@@ -300,11 +335,9 @@ const CATEGORIAS_CUSTO = {
     'Despesas Gerais': { cor: '#607d8b', icone: 'fas fa-file-invoice' }
 };
 
-// --- CARREGAR CUSTOS MELHORADO ---
 function carregarCustos() {
     const gastos = dadosObra.gastos || {};
     
-    // Garantir estrutura de categorias
     const categorias = {
         'Material': 0,
         'Mão de Obra': 0,
@@ -313,19 +346,16 @@ function carregarCustos() {
         'Despesas Gerais': 0
     };
     
-    // Se existir histórico detalhado, calcular por categoria
     if (gastos.historico && Array.isArray(gastos.historico)) {
         gastos.historico.forEach(lancamento => {
             const categoria = lancamento.categoria || 'Despesas Gerais';
             categorias[categoria] = (categorias[categoria] || 0) + (parseFloat(lancamento.valor) || 0);
         });
     } else {
-        // Compatibilidade com estrutura antiga
         categorias['Material'] = gastos.material?.total_realizado || 0;
         categorias['Mão de Obra'] = gastos.mao_de_obra?.total_realizado || 0;
     }
     
-    // Atualizar elementos na tela
     const elementos = {
         'total-material-admin': categorias['Material'],
         'total-mao-de-obra-admin': categorias['Mão de Obra'],
@@ -340,24 +370,21 @@ function carregarCustos() {
         }
     });
     
-    // Calcular e mostrar total geral
     const totalGeral = Object.values(categorias).reduce((sum, valor) => sum + valor, 0);
     const totalEl = document.getElementById('total-geral-admin');
     if (totalEl) {
         totalEl.textContent = formatarMoeda(totalGeral);
     }
     
-    // Carregar últimos lançamentos
     carregarUltimosLancamentos();
 }
 
-// --- CARREGAR ÚLTIMOS LANÇAMENTOS ---
 function carregarUltimosLancamentos() {
     const container = document.getElementById('ultimos-custos-lista');
     if (!container) return;
     
     const historico = dadosObra.gastos?.historico || [];
-    const ultimos = historico.slice(-5).reverse(); // Últimos 5, mais recente primeiro
+    const ultimos = historico.slice(-5).reverse();
     
     if (ultimos.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhum lançamento ainda.</p>';
@@ -378,7 +405,6 @@ function carregarUltimosLancamentos() {
     `).join('');
 }
 
-// --- FUNÇÃO PARA LANÇAR CUSTO RÁPIDO ---
 async function lancarCustoRapido(event) {
     event.preventDefault();
     
@@ -392,7 +418,6 @@ async function lancarCustoRapido(event) {
         return;
     }
     
-    // Garantir estrutura de gastos
     if (!dadosObra.gastos) {
         dadosObra.gastos = {
             material: { total_realizado: 0 },
@@ -405,22 +430,19 @@ async function lancarCustoRapido(event) {
         dadosObra.gastos.historico = [];
     }
     
-    // Criar novo lançamento
     const novoLancamento = {
         id: gerarNovoId('CST'),
-        data: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        data: new Date().toISOString().split('T')[0],
         categoria: categoria,
         descricao: descricao,
         fornecedor: fornecedor || 'Não informado',
         valor: valor,
         data_lancamento: new Date().toISOString(),
-        status_pagamento: 'Pago' // Padrão para lançamento rápido
+        status_pagamento: 'Pago'
     };
     
-    // Adicionar ao histórico
     dadosObra.gastos.historico.push(novoLancamento);
     
-    // Atualizar totais por categoria (compatibilidade)
     if (categoria === 'Material') {
         dadosObra.gastos.material.total_realizado = (dadosObra.gastos.material.total_realizado || 0) + valor;
     } else if (categoria === 'Mão de Obra') {
@@ -439,14 +461,13 @@ async function lancarCustoRapido(event) {
     }
 }
 
-// --- LIMPAR FORMULÁRIO DE CUSTO ---
 function limparFormularioCusto() {
     document.getElementById('custo-categoria').value = '';
     document.getElementById('custo-descricao').value = '';
     document.getElementById('custo-valor').value = '';
     document.getElementById('custo-fornecedor').value = '';
 }
-// --- CARREGAR DROPDOWN DE ATIVIDADES ---
+
 function carregarDropdownAtividades() {
     const parentActivitySelect = document.getElementById('parent-activity-select');
     if (!parentActivitySelect) return;
@@ -463,7 +484,6 @@ function carregarDropdownAtividades() {
     console.log(`✅ Dropdown atualizado com ${dadosObra.cronograma.length} atividades principais`);
 }
 
-// --- ATUALIZAR DISPLAY DE PESO GLOBAL TOTAL ---
 function atualizarDisplayPesoGlobal() {
     const validacao = validarPesoGlobalTotal();
     const displayEl = document.getElementById('total-peso-global-display');
@@ -484,7 +504,7 @@ function atualizarDisplayPesoGlobal() {
         }
     }
 }
-// --- DESTRUIR INSTÂNCIAS SORTABLE ANTERIORES ---
+
 function destruirSortableInstances() {
     sortableInstances.forEach(instance => {
         if (instance && typeof instance.destroy === 'function') {
@@ -494,7 +514,7 @@ function destruirSortableInstances() {
     sortableInstances = [];
     console.log('🗑️ Instâncias Sortable destruídas');
 }
-// --- CONFIGURAR DRAG & DROP PARA ATIVIDADES E SUB-ATIVIDADES ---
+
 function configurarDragAndDrop() {
     console.log('🎯 Configurando Drag & Drop...');
 
@@ -531,7 +551,7 @@ function configurarDragAndDrop() {
         console.error('❌ Erro:', erro);
     }
 }
-// --- CARREGAR CRONOGRAMA (VERSÃO MELHORADA) ---
+
 function carregarCronograma() {
     const cronogramaBody = document.getElementById('cronograma-body');
     if (!cronogramaBody) {
@@ -541,7 +561,6 @@ function carregarCronograma() {
     
     cronogramaBody.innerHTML = '';
 
-    // Adicionar seção de cronogramas padrão se não existir
     adicionarSecaoCronogramasPadrao();
 
     if (!dadosObra.cronograma || dadosObra.cronograma.length === 0) {
@@ -549,13 +568,10 @@ function carregarCronograma() {
         return;
     }
 
-    // CARREGAR ATIVIDADES PRINCIPAIS E SUB-ATIVIDADES
     dadosObra.cronograma.forEach((atividade, index) => {
-        // CALCULAR PROGRESSO EFETIVO DA PRINCIPAL
         const progressoEfetivo = calcularProgressoPrincipalPorSubAtividades(atividade);
         const temSubAtividades = atividade.sub_atividades && atividade.sub_atividades.length > 0;
         
-        // LINHA DA ATIVIDADE PRINCIPAL
         const row = cronogramaBody.insertRow();
         row.className = 'main-activity-row';
         row.setAttribute('draggable', 'true'); 
@@ -602,7 +618,6 @@ function carregarCronograma() {
             </td>
         `;
         
-        // LINHAS DAS SUB-ATIVIDADES (SE EXISTIREM)
         if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
             atividade.sub_atividades.forEach((subAtividade, subIndex) => {
                 const subRow = cronogramaBody.insertRow();
@@ -642,7 +657,7 @@ function carregarCronograma() {
             });
         }
     });
-        // Configurar drag & drop após carregar o cronograma
+        
     setTimeout(() => {
         configurarDragAndDrop();
     }, 100);
@@ -650,7 +665,6 @@ function carregarCronograma() {
     console.log(`✅ Cronograma renderizado: ${dadosObra.cronograma.length} atividades principais`);
 }
 
-// --- ADICIONAR SEÇÃO DE CRONOGRAMAS PADRÃO ---
 function adicionarSecaoCronogramasPadrao() {
     if (document.getElementById('cronogramas-padrao-section')) return;
     
@@ -701,7 +715,6 @@ function adicionarSecaoCronogramasPadrao() {
     tableContainer.parentNode.insertBefore(secaoPadrao, tableContainer);
 }
 
-// --- APLICAR CRONOGRAMA PADRÃO ---
 async function aplicarCronogramaPadrao(tipoPadrao) {
     const padrao = CRONOGRAMAS_PADRAO[tipoPadrao];
     if (!padrao) return;
@@ -731,18 +744,15 @@ async function aplicarCronogramaPadrao(tipoPadrao) {
     }
 }
 
-// --- FUNÇÕES DE ATUALIZAÇÃO MELHORADAS ---
 async function atualizarProgressoAtividade(index, novoProgresso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    // Validar progresso
     const progressoValidado = validarProgresso(novoProgresso);
     
-    // Se tem sub-atividades, não permite alteração manual
     if (atividade.sub_atividades && atividade.sub_atividades.length > 0) {
         alert('⚠️ Esta atividade possui sub-atividades. O progresso é calculado automaticamente.');
-        carregarAdminView(); // Recarregar para reverter a mudança
+        carregarAdminView();
         return;
     }
     
@@ -765,10 +775,9 @@ async function atualizarPesoAtividade(index, novoPeso) {
     const atividade = dadosObra.cronograma[index];
     if (!atividade) return;
     
-    const pesoValidado = validarProgresso(novoPeso); // Reutiliza a validação 0-100
+    const pesoValidado = validarProgresso(novoPeso);
     atividade.peso_global = pesoValidado;
     
-    // Verificar se o peso global total excede 100%
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total (${validacao.total}%) excede 100%!\n\nAjuste os pesos das atividades.`);
@@ -778,7 +787,6 @@ async function atualizarPesoAtividade(index, novoPeso) {
     carregarAdminView();
 }
 
-// --- FUNÇÕES PARA SUB-ATIVIDADES MELHORADAS ---
 async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProgresso) {
     const atividade = dadosObra.cronograma[atividadeIndex];
     if (!atividade || !atividade.sub_atividades || !atividade.sub_atividades[subIndex]) return;
@@ -788,7 +796,6 @@ async function atualizarProgressoSubAtividade(atividadeIndex, subIndex, novoProg
     atividade.sub_atividades[subIndex].progresso_atividade = progressoValidado;
     atividade.sub_atividades[subIndex].status = getAutomatedStatus(progressoValidado);
     
-    // Recalcular progresso da atividade principal
     const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
     atividade.progresso_atividade = novoProgressoPrincipal;
     atividade.status = getAutomatedStatus(novoProgressoPrincipal);
@@ -812,7 +819,6 @@ async function atualizarPesoSubAtividade(atividadeIndex, subIndex, novoPeso) {
     const pesoValidado = validarProgresso(novoPeso);
     atividade.sub_atividades[subIndex].peso_local = pesoValidado;
     
-    // Verificar se o peso das sub-atividades excede o peso da principal
     const validacao = validarPesoLocalSubAtividades(atividade);
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!\n\nAjuste os pesos das sub-atividades.`);
@@ -830,14 +836,11 @@ async function removerSubAtividade(atividadeIndex, subIndex) {
     
     atividade.sub_atividades.splice(subIndex, 1);
     
-    // Se não há mais sub-atividades, remover o array
     if (atividade.sub_atividades.length === 0) {
         delete atividade.sub_atividades;
-        // Resetar progresso da principal para 0
         atividade.progresso_atividade = 0;
         atividade.status = "Não Iniciada";
     } else {
-        // Recalcular progresso da principal
         const novoProgressoPrincipal = calcularProgressoPrincipalPorSubAtividades(atividade);
         atividade.progresso_atividade = novoProgressoPrincipal;
         atividade.status = getAutomatedStatus(novoProgressoPrincipal);
@@ -853,7 +856,6 @@ async function removerSubAtividade(atividadeIndex, subIndex) {
     }
 }
 
-// --- FUNÇÕES DE AÇÃO ---
 function adicionarAtividadeManual() {
     const descricao = prompt('📝 Descrição da atividade:');
     if (!descricao) return;
@@ -876,7 +878,6 @@ function adicionarAtividadeManual() {
     
     dadosObra.cronograma.push(novaAtividade);
     
-    // Verificar peso global total
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
@@ -915,7 +916,6 @@ async function adicionarAtividadePrincipal() {
 
     dadosObra.cronograma.push(novaAtividade);
     
-    // Verificar peso global total
     const validacao = validarPesoGlobalTotal();
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso global total agora é ${validacao.total}% (excede 100%)!`);
@@ -925,7 +925,6 @@ async function adicionarAtividadePrincipal() {
         await salvarDados();
         carregarAdminView();
         
-        // Limpar formulário
         document.getElementById('nova-atividade-descricao').value = '';
         document.getElementById('nova-atividade-peso-global').value = '';
         document.getElementById('nova-atividade-prazo').value = '';
@@ -938,7 +937,6 @@ async function adicionarAtividadePrincipal() {
     }
 }
 
-// --- ADICIONAR SUB-ATIVIDADE MELHORADA ---
 async function adicionarSubAtividade() {
     console.log('➕ Tentando adicionar sub-atividade...');
     
@@ -966,7 +964,6 @@ async function adicionarSubAtividade() {
 
     console.log('✅ Atividade principal encontrada:', atividadePrincipal.descricao);
 
-    // Garantir que existe o array de sub-atividades
     if (!atividadePrincipal.sub_atividades) {
         atividadePrincipal.sub_atividades = [];
         console.log('📝 Array de sub-atividades criado');
@@ -985,7 +982,6 @@ async function adicionarSubAtividade() {
 
     atividadePrincipal.sub_atividades.push(novaSubAtividade);
     
-    // Verificar se o peso das sub-atividades excede o da principal
     const validacao = validarPesoLocalSubAtividades(atividadePrincipal);
     if (validacao.excede) {
         alert(`⚠️ ATENÇÃO: O peso total das sub-atividades (${validacao.total}%) excede o peso da atividade principal (${validacao.limite}%)!`);
@@ -997,7 +993,6 @@ async function adicionarSubAtividade() {
         await salvarDados();
         carregarAdminView();
         
-        // Limpar formulário
         document.getElementById('parent-activity-select').value = '';
         document.getElementById('nova-sub-atividade-descricao').value = '';
         document.getElementById('nova-sub-atividade-peso-local').value = '';
@@ -1042,33 +1037,26 @@ async function removerAtividade(index) {
     }
 }
 
-// --- CARREGAR INTERFACE ADMIN ---
 function carregarAdminView() {
-    // Atualizar progresso global
     const progressoGlobal = calcularProgressoGlobal();
     const progressoEl = document.getElementById('admin-progresso-global');
     if (progressoEl) {
         progressoEl.textContent = `${progressoGlobal.toFixed(1)}%`;
     }
 
-    // Carregar cronograma
     carregarCronograma();
     
-    configurarDragAndDrop();  // 🆕 ADICIONE ESTA LINHA SE NÃO TIVER
+    configurarDragAndDrop();
 
-    // Carregar custos
     carregarCustos();
     
-    // Carregar dropdown de atividades
     carregarDropdownAtividades();
     
-    // Atualizar display de peso global
     atualizarDisplayPesoGlobal();
     
     console.log('✅ Admin view carregada');
 }
 
-// --- ADICIONAR CSS PARA DRAG & DROP ---
 function adicionarEstilosDragDrop() {
     const style = document.createElement('style');
     style.textContent = `
@@ -1112,6 +1100,7 @@ function adicionarEstilosDragDrop() {
     `;
     document.head.appendChild(style);
 }
+
 function irParaCustos() {
     const projeto = localStorage.getItem('projetoAtual');
     window.location.href = `Custos/custos.html?projeto=${projeto}`;
@@ -1121,7 +1110,6 @@ function irParaCustos() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando aplicação...');
 
-       // 🆕 ADICIONE ESTA LINHA
     adicionarEstilosDragDrop();
 
     try {
@@ -1137,7 +1125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Event listener para o formulário de cronograma
 document.getElementById('cronograma-form')?.addEventListener('submit', async function(event) {
     event.preventDefault();
     console.log('💾 Salvando cronograma...');
@@ -1151,10 +1138,8 @@ document.getElementById('cronograma-form')?.addEventListener('submit', async fun
     }
 });
 
-// Event listener para o formulário de custos rápido
 document.getElementById('custos-form-rapido')?.addEventListener('submit', lancarCustoRapido);
 
-// Manter compatibilidade com formulário antigo (se existir)
 document.getElementById('custos-form')?.addEventListener('submit', async function(event) {
     event.preventDefault();
     const novoMaterial = parseFloat(document.getElementById('novo-material')?.value) || 0;
@@ -1165,7 +1150,6 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
         return;
     }
 
-    // Garantir estrutura de gastos
     if (!dadosObra.gastos) {
         dadosObra.gastos = {
             material: { total_realizado: 0 },
@@ -1178,7 +1162,6 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
         dadosObra.gastos.historico = [];
     }
 
-    // Adicionar ao histórico detalhado
     if (novoMaterial > 0) {
         dadosObra.gastos.historico.push({
             id: gerarNovoId('CST'),
@@ -1221,4 +1204,5 @@ document.getElementById('custos-form')?.addEventListener('submit', async functio
         alert('❌ Erro ao lançar custos');
     }
 });
+
 console.log('✅ Script carregado completamente');
