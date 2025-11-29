@@ -23,10 +23,8 @@ const projetosIniciais = {
             "margem_contingencia": 10.0
         },
         "gastos": {
-            "material": { "total_realizado": 45000.00, "historico": [] },
-            "mao_de_obra": { "total_realizado": 25000.00, "historico": [] },
-            "equipamentos": { "total_realizado": 8000.00, "historico": [] },
-            "servicos_terceiros": { "total_realizado": 12000.00, "historico": [] }
+            "historico": { "valor": 45000.00, "historico": [] },
+
         }
     },
     
