@@ -124,6 +124,52 @@ async function lancarCustoRapido(event) {
         status_pagamento: 'Pago'
     };
 
+// --- ADICIONAR CSS PARA DRAG & DROP ---
+function adicionarEstilosDragDrop() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #e3f2fd !important;
+        }
+        
+        .sortable-chosen {
+            background: #bbdefb !important;
+        }
+        
+        .sortable-drag {
+            background: #2196f3 !important;
+            color: white !important;
+        }
+        
+        .drag-handle-main:hover,
+        .drag-handle-sub:hover {
+            color: #0056b3 !important;
+            transform: scale(1.1);
+        }
+        
+        .drag-handle-main:active,
+        .drag-handle-sub:active {
+            cursor: grabbing !important;
+        }
+        
+        .main-activity-row {
+            transition: all 0.2s ease;
+        }
+        
+        .sub-activity-row {
+            transition: all 0.2s ease;
+        }
+        
+        .main-activity-row:hover,
+        .sub-activity-row:hover {
+            background: #f0f8ff !important;
+        }
+    `;
+    document.head.appendChild(style);
+    console.log('✅ Estilos de Drag & Drop adicionados');
+}
+
     console.log('📝 Novo lançamento criado:', novoLancamento);
 
     // --- ADICIONAR AO HISTÓRICO ---
